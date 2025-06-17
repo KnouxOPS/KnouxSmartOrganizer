@@ -20,10 +20,10 @@ export function ImageDropzone({
 }: ImageDropzoneProps) {
   const handleDrop = useCallback(
     (acceptedFiles: File[], rejectedFiles: any[]) => {
-      if (rejectedFiles.length > 0) {
+      if (rejectedFiles && rejectedFiles.length > 0) {
         console.warn("Some files were rejected:", rejectedFiles);
       }
-      if (acceptedFiles.length > 0) {
+      if (acceptedFiles && acceptedFiles.length > 0) {
         onDrop(acceptedFiles);
       }
     },
@@ -49,7 +49,7 @@ export function ImageDropzone({
     multiple: true,
   });
 
-  const hasErrors = rejectedFiles.length > 0;
+  const hasErrors = rejectedFiles && rejectedFiles.length > 0;
 
   return (
     <div className={cn("w-full", className)}>
@@ -114,7 +114,7 @@ export function ImageDropzone({
             </span>
           </div>
           <ul className="mt-2 text-sm text-danger-600 space-y-1">
-            {rejectedFiles.map((file, index) => (
+            {rejectedFiles?.map((file, index) => (
               <li key={index} className="flex items-center justify-between">
                 <span>{file.file.name}</span>
                 <span className="text-xs">
