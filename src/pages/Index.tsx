@@ -486,6 +486,67 @@ export default function Index() {
                       </Button>
                     </div>
                   )}
+
+                  {/* Processing Options */}
+                  {images.length > 0 && (
+                    <div className="mt-6 p-4 bg-white/70 backdrop-blur-sm rounded-lg border border-gray-200">
+                      <h4 className="font-medium mb-3 flex items-center text-gray-700">
+                        <Settings className="w-4 h-4 mr-2" />
+                        إعدادات المعالجة
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {[
+                          {
+                            key: "autoRename",
+                            label: "إعادة تسمية تلقائية",
+                            icon: "📝",
+                          },
+                          {
+                            key: "detectFaces",
+                            label: "كشف الوجوه",
+                            icon: "👥",
+                          },
+                          {
+                            key: "extractText",
+                            label: "استخراج النص",
+                            icon: "📄",
+                          },
+                          {
+                            key: "findDuplicates",
+                            label: "البحث عن المكرر",
+                            icon: "🔍",
+                          },
+                        ].map(({ key, label, icon }) => (
+                          <div
+                            key={key}
+                            className="flex items-center space-x-2 p-2 bg-white rounded border hover:bg-gray-50 transition-colors"
+                          >
+                            <span className="text-lg">{icon}</span>
+                            <Switch
+                              id={key}
+                              checked={
+                                organizeOptions[
+                                  key as keyof typeof organizeOptions
+                                ] as boolean
+                              }
+                              onCheckedChange={(checked) =>
+                                setOrganizeOptions({
+                                  ...organizeOptions,
+                                  [key]: checked,
+                                })
+                              }
+                            />
+                            <Label
+                              htmlFor={key}
+                              className="text-sm font-medium"
+                            >
+                              {label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
