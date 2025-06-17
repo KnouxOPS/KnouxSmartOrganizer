@@ -67,11 +67,17 @@ export default function Index() {
 
   // Initialize AI models on component mount
   useEffect(() => {
-    const initializeAI = async () => {
-      // Wait a bit for AI engine to initialize
-      setTimeout(() => {
-        setAiModels(aiEngine.getModelStatus());
-      }, 100);
+    const initializeAI = () => {
+      // Get models status immediately
+      const models = aiEngine.getModelStatus();
+      setAiModels(models);
+
+      // If no models yet, wait a bit and try again
+      if (models.length === 0) {
+        setTimeout(() => {
+          setAiModels(aiEngine.getModelStatus());
+        }, 500);
+      }
     };
     initializeAI();
   }, []);
