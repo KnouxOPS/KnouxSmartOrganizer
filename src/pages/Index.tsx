@@ -63,7 +63,18 @@ export default function Index() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set());
   const [previewImage, setPreviewImage] = useState<ImageFile | null>(null);
-  const [aiModels, setAiModels] = useState(aiEngine.getModelStatus());
+  const [aiModels, setAiModels] = useState<any[]>([]);
+
+  // Initialize AI models on component mount
+  React.useEffect(() => {
+    const initializeAI = async () => {
+      // Wait a bit for AI engine to initialize
+      setTimeout(() => {
+        setAiModels(aiEngine.getModelStatus());
+      }, 100);
+    };
+    initializeAI();
+  }, []);
 
   const handleSmartOrganize = async () => {
     if (images.length === 0) return;
