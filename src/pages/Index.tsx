@@ -89,7 +89,7 @@ export default function Index() {
     // Update model status every 2 seconds during downloads
     const interval = setInterval(() => {
       const currentModels = aiEngine.getModelStatus();
-      const hasLoadingModels = currentModels.some((m) => m.loading);
+      const hasLoadingModels = currentModels.some(m => m.loading);
       if (hasLoadingModels) {
         setAiModels([...currentModels]);
       }
@@ -301,28 +301,20 @@ export default function Index() {
                     <Button
                       onClick={async () => {
                         try {
-                          const { fileSystemManager } = await import(
-                            "@/lib/file-system"
-                          );
+                          const { fileSystemManager } = await import("@/lib/file-system");
                           if (!fileSystemManager.isSupported()) {
-                            toast.error(
-                              "❌ متصفحك لا يدعم الوصول للملفات المحلية",
-                              {
-                                description: "استخدم Chrome أو Edge الحديث",
-                              },
-                            );
+                            toast.error("❌ متصفحك لا يدعم الوصول للملفات المحلية", {
+                              description: "استخدم Chrome أو Edge الحديث"
+                            });
                             return;
                           }
 
-                          const result =
-                            await fileSystemManager.selectDirectory();
-                          toast.success(
-                            `📁 تم تحديد ${result.files.length} صورة من المجلد: ${result.path}`,
-                          );
+                          const result = await fileSystemManager.selectDirectory();
+                          toast.success(`📁 تم تحديد ${result.files.length} صورة من المجلد: ${result.path}`);
                           await addImages(result.files);
                         } catch (error) {
                           toast.error("❌ فشل في الوصول للمجلد", {
-                            description: error.message,
+                            description: error.message
                           });
                         }
                       }}
@@ -336,14 +328,12 @@ export default function Index() {
 
                     <Button
                       onClick={() => {
-                        const input = document.createElement("input");
-                        input.type = "file";
+                        const input = document.createElement('input');
+                        input.type = 'file';
                         input.multiple = true;
-                        input.accept = "image/*";
+                        input.accept = 'image/*';
                         input.onchange = (e) => {
-                          const files = Array.from(
-                            (e.target as HTMLInputElement).files || [],
-                          );
+                          const files = Array.from((e.target as HTMLInputElement).files || []);
                           if (files.length > 0) {
                             toast.success(`📸 تم اختيار ${files.length} صورة`);
                             addImages(files);
@@ -403,16 +393,14 @@ export default function Index() {
                     onDownloadModels={async () => {
                       try {
                         toast.info("🔄 بدء تحميل النماذج...", {
-                          description:
-                            "سيتم تحميل جميع نماذج الذكاء الاصطناعي المتقدمة",
+                          description: "سيتم تحميل جميع نماذج الذكاء الاصطناعي المتقدمة"
                         });
 
                         await aiEngine.downloadAndInstallModels();
                         setAiModels(aiEngine.getModelStatus());
 
                         toast.success("🎉 تم تحميل النماذج بنجاح!", {
-                          description:
-                            "التطبيق جاهز الآن مع أقوى إمكانيات الذكاء الاصطناعي",
+                          description: "التطبيق جاهز الآن مع أقوى إمكانيات الذكاء الاصطناعي"
                         });
 
                         // Celebrate with confetti
@@ -424,7 +412,7 @@ export default function Index() {
                         });
                       } catch (error) {
                         toast.error("❌ فشل تحميل النماذج", {
-                          description: "سيعمل التطبيق بالنماذج الاحتياطية",
+                          description: "سيعمل التطبيق بالنماذج الاحتياطية"
                         });
                       }
                     }}
@@ -437,15 +425,11 @@ export default function Index() {
                         onClick={async () => {
                           try {
                             toast.info("🤖 بدء التحليل الذكي...");
-                            const { autoModelManager } = await import(
-                              "@/lib/auto-models"
-                            );
+                            const { autoModelManager } = await import("@/lib/auto-models");
                             await autoModelManager.ensureModelsLoaded();
                             await handleSmartOrganize();
                           } catch (error) {
-                            toast.error("❌ فشل في التحليل", {
-                              description: error.message,
-                            });
+                            toast.error("❌ فشل في التحليل", { description: error.message });
                           }
                         }}
                         disabled={isProcessing || unprocessedCount === 0}
@@ -460,9 +444,7 @@ export default function Index() {
                         ) : (
                           <>
                             <Brain className="w-10 h-10 mb-2" />
-                            <span className="font-bold text-lg">
-                              🧠 تشغيل الـ AI
-                            </span>
+                            <span className="font-bold text-lg">🧠 تشغيل الـ AI</span>
                             <span className="text-sm opacity-90">
                               تحليل شامل ({unprocessedCount} صورة)
                             </span>
@@ -474,37 +456,30 @@ export default function Index() {
                         onClick={async () => {
                           try {
                             toast.info("📁 إنشاء مجلدات منظمة...");
-                            const { fileSystemManager } = await import(
-                              "@/lib/file-system"
-                            );
+                            const { fileSystemManager } = await import("@/lib/file-system");
 
                             if (!fileSystemManager.hasSelectedDirectory()) {
                               toast.error("❌ يجب اختيار مجلد أولاً");
                               return;
                             }
 
-                            const success =
-                              await fileSystemManager.createOrganizedFolders();
+                            const success = await fileSystemManager.createOrganizedFolders();
                             if (success) {
-                              toast.success("✅ تم إنشاء المجلدات المنظمة!", {
-                                description: "يمكنك الآن نقل الصور حسب التصنيف",
+                              toast.success("✅ تم إ��شاء المجلدات المنظمة!", {
+                                description: "يمكنك الآن نقل الصور حسب التصنيف"
                               });
                             } else {
                               toast.error("❌ فشل في إنشاء المجلدات");
                             }
                           } catch (error) {
-                            toast.error("❌ خطأ في إنشاء المجلدات", {
-                              description: error.message,
-                            });
+                            toast.error("❌ خطأ في إنشاء المجلدات", { description: error.message });
                           }
                         }}
                         className="h-32 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white flex flex-col items-center justify-center p-4"
                         size="lg"
                       >
                         <FolderOpen className="w-10 h-10 mb-2" />
-                        <span className="font-bold text-lg">
-                          📁 إنشاء مجلدات
-                        </span>
+                        <span className="font-bold text-lg">📁 إنشاء مجلدات</span>
                         <span className="text-sm opacity-90">
                           تنظيم تلقائي للمجلد
                         </span>
@@ -512,12 +487,8 @@ export default function Index() {
 
                       <Button
                         onClick={() => {
-                          const categorized = images.filter(
-                            (img) => img.category,
-                          );
-                          const categories = [
-                            ...new Set(categorized.map((img) => img.category)),
-                          ];
+                          const categorized = images.filter(img => img.category);
+                          const categories = [...new Set(categorized.map(img => img.category))];
 
                           if (categories.length === 0) {
                             toast.info("ℹ️ قم بتشغيل AI أولاً لتصنيف الصور");
@@ -525,14 +496,12 @@ export default function Index() {
                           }
 
                           toast.success(`📊 تقرير التصنيف`, {
-                            description: `تم تصنيف ${categorized.length} صورة إلى ${categories.length} فئة`,
+                            description: `تم تصنيف ${categorized.length} صورة إلى ${categories.length} فئة`
                           });
 
                           // Show detailed breakdown
-                          categories.forEach((category) => {
-                            const count = categorized.filter(
-                              (img) => img.category === category,
-                            ).length;
+                          categories.forEach(category => {
+                            const count = categorized.filter(img => img.category === category).length;
                             console.log(`${category}: ${count} صورة`);
                           });
                         }}
@@ -540,9 +509,7 @@ export default function Index() {
                         size="lg"
                       >
                         <BarChart3 className="w-10 h-10 mb-2" />
-                        <span className="font-bold text-lg">
-                          📊 تقرير التصنيف
-                        </span>
+                        <span className="font-bold text-lg">📊 تقرير التصنيف</span>
                         <span className="text-sm opacity-90">
                           إحصائيات مفصلة
                         </span>
@@ -555,17 +522,12 @@ export default function Index() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4 border-t border-gray-200">
                       <Button
                         onClick={async () => {
-                          const selfies = images.filter(
-                            (img) =>
-                              img.analysis?.faces &&
-                              img.analysis.faces.length > 0,
+                          const selfies = images.filter(img =>
+                            img.analysis?.faces && img.analysis.faces.length > 0
                           );
-                          toast.success(
-                            `👤 وجدت ${selfies.length} صورة شخصية`,
-                            {
-                              description: "جاهزة للنقل لمجلد الصور الشخصية",
-                            },
-                          );
+                          toast.success(`👤 وجدت ${selfies.length} صورة شخصية`, {
+                            description: "جاهزة للنقل لمجلد الصور الشخصية"
+                          });
                         }}
                         variant="outline"
                         className="border-purple-300 text-purple-700 hover:bg-purple-50"
@@ -576,15 +538,117 @@ export default function Index() {
 
                       <Button
                         onClick={() => {
+                          const documents = images.filter(img =>
+                            img.analysis?.text && img.analysis.text.text.length > 10
+                          );
+                          toast.success(`📄 وجدت ${documents.length} وثيقة`, {
+                            description: "جاهزة للنقل لمجلد الوثائق"
+                          });
+                        }}
+                        variant="outline"
+                        className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                      >
+                        <FileText className="w-4 h-4 mr-2" />
+                        وثائق
+                      </Button>
+
+                      <Button
+                        onClick={() => {
+                          const duplicates = aiEngine.findSimilarImages(
+                            images.filter(img => img.analysis).map(img => ({
+                              id: img.id,
+                              analysis: img.analysis!
+                            }))
+                          );
+                          toast.info(`🔍 وجدت ${duplicates.length} مجموعة صور متشابهة`, {
+                            description: "جاهزة للمراجعة والحذف"
+                          });
+                        }}
+                        variant="outline"
+                        className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                      >
+                        <Copy className="w-4 h-4 mr-2" />
+                        صور مكررة
+                      </Button>
+
+                      <Button
+                        onClick={exportResults}
+                        variant="outline"
+                        className="border-green-300 text-green-700 hover:bg-green-50"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        تصدير النتائج
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Auto Organization Button */}
+                  {images.length > 0 && processedCount > 0 && (
+                    <div className="p-6 bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg border-2 border-emerald-200">
+                      <div className="text-center space-y-4">
+                        <h4 className="text-xl font-bold text-emerald-800">
+                          🎯 ترتيب تلقائي كامل
+                        </h4>
+                        <p className="text-emerald-700">
+                          تم تحليل الصور! اضغط لترتيبها تلقائياً في مجلدات منظمة
+                        </p>
+                        <Button
+                          onClick={async () => {
+                            try {
+                              toast.info("🔄 بدء الترتيب التلقائي...");
+
+                              const { fileSystemManager } = await import("@/lib/file-system");
+
+                              // Create organized folders
+                              await fileSystemManager.createOrganizedFolders();
+
+                              // Simulate organizing each image
+                              let organized = 0;
+                              for (const image of images) {
+                                if (image.category) {
+                                  await fileSystemManager.simulateFileOrganization(
+                                    image.name,
+                                    image.category
+                                  );
+                                  organized++;
+                                }
+                              }
+
+                              toast.success(`🎉 تم ترتيب ${organized} صورة!`, {
+                                description: "الصور منظمة في مجلدات حسب المحتوى"
+                              });
+
+                              // Celebrate with confetti
+                              confetti({
+                                particleCount: 200,
+                                spread: 70,
+                                origin: { y: 0.6 },
+                                colors: ["#10b981", "#059669", "#047857"],
+                              });
+
+                            } catch (error) {
+                              toast.error("❌ فشل في الترتيب التلقائي", {
+                                description: error.message
+                              });
+                            }
+                          }}
+                          className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold text-lg px-8 py-4"
+                          size="lg"
+                        >
+                          <Target className="w-6 h-6 mr-3" />
+                          🎯 ت��تيب كامل تلقائي
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                      <Button
+                        onClick={() => {
                           // Face detection action
-                          const faceImages = images.filter(
-                            (img) =>
-                              img.analysis?.faces &&
-                              img.analysis.faces.length > 0,
+                          const faceImages = images.filter(img =>
+                            img.analysis?.faces && img.analysis.faces.length > 0
                           );
-                          toast.success(
-                            `🧍 تم العثور على ${faceImages.length} صورة تحتوي على وجوه`,
-                          );
+                          toast.success(`🧍 تم العثور على ${faceImages.length} صورة تحتوي على وجوه`);
                         }}
                         className="h-24 bg-gradient-to-br from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white flex flex-col items-center justify-center p-4"
                         size="lg"
@@ -599,34 +663,26 @@ export default function Index() {
                       <Button
                         onClick={() => {
                           // Text extraction action
-                          const textImages = images.filter(
-                            (img) =>
-                              img.analysis?.text &&
-                              img.analysis.text.text.length > 10,
+                          const textImages = images.filter(img =>
+                            img.analysis?.text && img.analysis.text.text.length > 10
                           );
-                          toast.success(
-                            `📄 تم العثور على ${textImages.length} صورة تحتوي على نص`,
-                          );
+                          toast.success(`📄 تم العثور على ${textImages.length} صورة تحتوي على نص`);
                         }}
                         className="h-24 bg-gradient-to-br from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white flex flex-col items-center justify-center p-4"
                         size="lg"
                       >
                         <FileText className="w-8 h-8 mb-2" />
                         <span className="font-semibold">استخراج النص</span>
-                        <span className="text-xs opacity-90">قراءة النصوص</span>
+                        <span className="text-xs opacity-90">
+                          قراءة النصوص
+                        </span>
                       </Button>
 
                       <Button
                         onClick={() => {
                           // Categorization action
-                          const categories = [
-                            ...new Set(
-                              images.map((img) => img.category).filter(Boolean),
-                            ),
-                          ];
-                          toast.success(
-                            `📂 تم تصنيف الصور إلى ${categories.length} فئة`,
-                          );
+                          const categories = [...new Set(images.map(img => img.category).filter(Boolean))];
+                          toast.success(`📂 تم تصنيف الصور إلى ${categories.length} فئة`);
                         }}
                         className="h-24 bg-gradient-to-br from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white flex flex-col items-center justify-center p-4"
                         size="lg"
@@ -646,16 +702,12 @@ export default function Index() {
                       <Button
                         onClick={() => {
                           const duplicates = aiEngine.findSimilarImages(
-                            images
-                              .filter((img) => img.analysis)
-                              .map((img) => ({
-                                id: img.id,
-                                analysis: img.analysis!,
-                              })),
+                            images.filter(img => img.analysis).map(img => ({
+                              id: img.id,
+                              analysis: img.analysis!
+                            }))
                           );
-                          toast.info(
-                            `🔍 تم العثور على ${duplicates.length} مجموعة صور متشابهة`,
-                          );
+                          toast.info(`🔍 تم العثور على ${duplicates.length} مجموعة صور متشابهة`);
                         }}
                         variant="outline"
                         size="sm"
@@ -706,26 +758,10 @@ export default function Index() {
                       </h4>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
-                          {
-                            key: "autoRename",
-                            label: "إعادة تسمية تلقائية",
-                            icon: "📝",
-                          },
-                          {
-                            key: "detectFaces",
-                            label: "كشف الوجوه",
-                            icon: "👥",
-                          },
-                          {
-                            key: "extractText",
-                            label: "استخراج النص",
-                            icon: "📄",
-                          },
-                          {
-                            key: "findDuplicates",
-                            label: "البحث عن المكرر",
-                            icon: "🔍",
-                          },
+                          { key: "autoRename", label: "إعادة تسمية تلقائية", icon: "📝" },
+                          { key: "detectFaces", label: "كشف الوجوه", icon: "👥" },
+                          { key: "extractText", label: "استخراج النص", icon: "📄" },
+                          { key: "findDuplicates", label: "البحث عن المكرر", icon: "🔍" },
                         ].map(({ key, label, icon }) => (
                           <div
                             key={key}
@@ -746,10 +782,7 @@ export default function Index() {
                                 })
                               }
                             />
-                            <Label
-                              htmlFor={key}
-                              className="text-sm font-medium"
-                            >
+                            <Label htmlFor={key} className="text-sm font-medium">
                               {label}
                             </Label>
                           </div>
@@ -759,6 +792,8 @@ export default function Index() {
                   )}
                 </CardContent>
               </Card>
+
+
 
               {/* Main Content Tabs */}
               {images.length > 0 && (
