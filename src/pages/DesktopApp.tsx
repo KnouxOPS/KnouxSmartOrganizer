@@ -165,6 +165,27 @@ export default function DesktopApp() {
   // اختيار مجلد العمل
   const handleSelectWorkingDirectory = async () => {
     try {
+      // تحقق من دعم File System Access API أولاً
+      if (!("showDirectoryPicker" in window)) {
+        addNotification({
+          type: "error",
+          title: "غير مدعوم",
+          description:
+            "File System Access API غير مدعوم في هذا المتصفح. استخدم Chrome أو Edge الحديث.",
+        });
+        return;
+      }
+
+      // تحقق من السياق الآمن
+      if (!window.isSecureContext) {
+        addNotification({
+          type: "error",
+          title: "سياق غير آمن",
+          description: "يجب استخدام HTTPS أو localhost للوصول للملفات المحلية.",
+        });
+        return;
+      }
+
       addNotification({
         type: "info",
         title: "اختيار مجلد العمل",
@@ -182,11 +203,31 @@ export default function DesktopApp() {
 
       // فحص المجلد تلقائياً
       handleScanDirectory();
-    } catch (error) {
+    } catch (error: any) {
+      console.error("خطأ في اختيار المجلد:", error);
+
+      let errorTitle = "فشل في اختيار المجلد";
+      let errorDescription = "حدث خطأ غير متوقع";
+
+      if (
+        error.message.includes("iframe") ||
+        error.message.includes("cross-origin")
+      ) {
+        errorTitle = "مشكلة أمنية";
+        errorDescription =
+          "لا يمكن الوصول للملفات في هذا السياق. يرجى استخدام النسخة العاملة بدلاً من ذلك.";
+      } else if (error.message.includes("غير مدعوم")) {
+        errorTitle = "غير مدعوم";
+        errorDescription = "يتطلب متصفح Chrome أو Edge حديث";
+      } else if (error.name === "AbortError") {
+        errorTitle = "تم الإلغاء";
+        errorDescription = "تم إلغاء اختيار المجلد";
+      }
+
       addNotification({
         type: "error",
-        title: "فشل في اختيار المجلد",
-        description: "يرجى المحاولة مرة أخرى أو اختيار مجلد آخر",
+        title: errorTitle,
+        description: errorDescription,
       });
     }
   };
@@ -316,7 +357,7 @@ export default function DesktopApp() {
       addNotification({
         type: "error",
         title: "خطأ في المعالجة",
-        description: "حدث خطأ أثناء معالجة الملف��ت",
+        description: "حدث خطأ أثناء معالجة الملفات",
       });
     }
   };
@@ -636,7 +677,7 @@ export default function DesktopApp() {
                     checked={createBackup}
                     onCheckedChange={setCreateBackup}
                   />
-                  <Label>إنشاء نسخة احتياطية</Label>
+                  <Label>إنشاء نسخة احت��اطية</Label>
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -672,7 +713,7 @@ export default function DesktopApp() {
                 </div>
 
                 <div>
-                  <Label>طريقة التنظيم</Label>
+                  <Label>طريق�� التنظيم</Label>
                   <Select
                     value={organizationMethod}
                     onValueChange={setOrganizationMethod}
@@ -821,7 +862,7 @@ export default function DesktopApp() {
               </Card>
             </div>
 
-            {/* عرض هيكل المجلد */}
+            {/* عرض هيكل ال��جلد */}
             {folderStructure && (
               <Card>
                 <CardHeader>
@@ -895,12 +936,44 @@ export default function DesktopApp() {
                         اختر مجلد العمل للبدء في تنظيم صورك بالذكاء الاصطناعي
                       </p>
                     </div>
+
+                    {/* تحذير File System API */}
+                    {(!("showDirectoryPicker" in window) ||
+                      !window.isSecureContext) && (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex items-center space-x-2 text-yellow-700">
+                          <AlertTriangle className="w-5 h-5" />
+                          <span className="font-medium">تحذير</span>
+                        </div>
+                        <p className="text-yellow-600 text-xs mt-1">
+                          {!("showDirectoryPicker" in window)
+                            ? "File System Access API غير مدعوم. يتطلب Chrome/Edge حديث."
+                            : "سياق غير آمن. يتطلب HTTPS أو localhost."}
+                        </p>
+                        <p className="text-yellow-600 text-xs mt-1">
+                          💡 <strong>الحل:</strong> استخدم "النسخة العاملة"
+                          بدلاً من ذلك
+                        </p>
+                      </div>
+                    )}
+
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>✅ معالجة محلية 100% - لا يتم رفع الصور للإنترنت</p>
-                      <p>✅ دعم الملفات الكبيرة ح��ى {maxFileSize[0]} MB</p>
+                      <p>✅ دعم الملفات الكبيرة حتى {maxFileSize[0]} MB</p>
                       <p>✅ تنظيم تلقائي ذكي بدون تدخل</p>
                       <p>✅ نسخ احتياطية للأمان</p>
                     </div>
+
+                    {/* زر العودة للنسخة العاملة */}
+                    {(!("showDirectoryPicker" in window) ||
+                      !window.isSecureContext) && (
+                      <Button
+                        onClick={() => window.location.reload()}
+                        className="bg-green-600 hover:bg-green-700"
+                      >
+                        العودة لاختيار النسخة العاملة
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>

@@ -57,14 +57,25 @@ export class FileSystemManager {
    */
   async selectWorkingDirectory(): Promise<string> {
     try {
-      if ("showDirectoryPicker" in window) {
-        this.directoryHandle = await (window as any).showDirectoryPicker({
-          mode: "readwrite",
-          startIn: "pictures",
-        });
+      // تحقق من دعم File System Access API وكونه يعمل في السياق الحالي
+      if ("showDirectoryPicker" in window && window.isSecureContext) {
+        try {
+          this.directoryHandle = await (window as any).showDirectoryPicker({
+            mode: "readwrite",
+            startIn: "pictures",
+          });
 
-        this.currentPath = this.directoryHandle.name;
-        return this.currentPath;
+          this.currentPath = this.directoryHandle.name;
+          return this.currentPath;
+        } catch (securityError: any) {
+          // إذا كان خطأ أمني (iframe أو cross-origin)
+          if (securityError.name === "SecurityError") {
+            throw new Error(
+              "File System Access API غير متاح في هذا السياق (iframe أو cross-origin). يرجى استخدام النسخة العاملة بدلاً من ذلك.",
+            );
+          }
+          throw securityError;
+        }
       } else {
         throw new Error("File System Access API غير مدعوم في هذا المتصفح");
       }
