@@ -34,6 +34,7 @@ import { ImageGrid } from "@/components/ui/image-grid";
 import { ProcessingDashboard } from "@/components/ui/processing-dashboard";
 import { FilterSidebar } from "@/components/ui/filter-sidebar";
 import { AIModelsStatus } from "@/components/ui/ai-models-status";
+import { ModelManager } from "@/components/ui/model-manager";
 import { useImageOrganizer } from "@/hooks/use-image-organizer";
 import { aiEngine } from "@/lib/ai-engine";
 import { cn } from "@/lib/utils";
@@ -293,6 +294,14 @@ export default function Index() {
                   />
                 </CardContent>
               </Card>
+
+              {/* Local Model Manager */}
+              <ModelManager
+                onModelsReady={() => {
+                  setAiModels(aiEngine.getModelStatus());
+                  toast.success("🎯 النماذج المحلية جاهزة للعمل!");
+                }}
+              />
 
               {/* AI Control Panel */}
               <Card className="border-2 border-knoux-200 bg-gradient-to-r from-knoux-50 to-purple-50">
