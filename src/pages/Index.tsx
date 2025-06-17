@@ -35,6 +35,7 @@ import { AIModelsStatus } from "@/components/ui/ai-models-status";
 import { useImageOrganizer } from "@/hooks/use-image-organizer";
 import { aiEngine } from "@/lib/ai-engine";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { ImageFile } from "@/types/organizer";
 
 export default function Index() {
@@ -289,8 +290,32 @@ export default function Index() {
               <AIModelsStatus
                 models={aiModels}
                 onDownloadModels={async () => {
-                  await aiEngine.downloadAndInstallModels();
-                  setAiModels(aiEngine.getModelStatus());
+                  try {
+                    toast.info("🔄 بدء تحميل النماذج...", {
+                      description:
+                        "سيتم تحميل جميع نماذج الذكاء الاصطناعي المتقدمة",
+                    });
+
+                    await aiEngine.downloadAndInstallModels();
+                    setAiModels(aiEngine.getModelStatus());
+
+                    toast.success("🎉 تم تحميل النماذج بنجاح!", {
+                      description:
+                        "التطبيق جاهز الآن مع أقوى إمكانيات الذكاء الاصطناعي",
+                    });
+
+                    // Celebrate with confetti
+                    confetti({
+                      particleCount: 100,
+                      spread: 70,
+                      origin: { y: 0.6 },
+                      colors: ["#6366f1", "#8b5cf6", "#06b6d4"],
+                    });
+                  } catch (error) {
+                    toast.error("❌ فشل تحميل النماذج", {
+                      description: "سيعمل التطبيق بالنماذج الاحتياطية",
+                    });
+                  }
                 }}
               />
 
