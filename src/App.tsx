@@ -9,7 +9,15 @@ import DesktopApp from "@/pages/DesktopApp";
 import ModernApp from "@/pages/ModernApp";
 import WorkingApp from "@/pages/WorkingApp";
 import NotFound from "@/pages/NotFound";
-import { Globe, HardDrive, Zap, Shield, Database, Cpu } from "lucide-react";
+import {
+  Globe,
+  HardDrive,
+  Zap,
+  Shield,
+  Database,
+  Cpu,
+  CheckCircle,
+} from "lucide-react";
 import "./App.css";
 
 function App() {
