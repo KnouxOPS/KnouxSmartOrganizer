@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useRef } from "react";
 import { useDropzone } from "react-dropzone";
 import { Upload, Image, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ interface ImageDropzoneProps {
   maxFiles?: number;
   maxSize?: number;
   className?: string;
+  onFolderSelect?: (files: File[]) => void;
 }
 
 export function ImageDropzone({
@@ -17,7 +18,18 @@ export function ImageDropzone({
   maxFiles = 100,
   maxSize = 50 * 1024 * 1024, // 50MB
   className,
+  onFolderSelect,
 }: ImageDropzoneProps) {
+  const folderInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFolderSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+
+    if (imageFiles.length > 0 && onFolderSelect) {
+      onFolderSelect(imageFiles);
+    }
+  };
   const handleDrop = useCallback(
     (acceptedFiles: File[], rejectedFiles: any[]) => {
       if (rejectedFiles && rejectedFiles.length > 0) {
@@ -70,6 +82,17 @@ export function ImageDropzone({
       >
         <input {...getInputProps()} />
 
+        {/* Hidden folder input */}
+        <input
+          ref={folderInputRef}
+          type="file"
+          webkitdirectory=""
+          multiple
+          accept="image/*"
+          onChange={handleFolderSelect}
+          style={{ display: "none" }}
+        />
+
         <div className="flex flex-col items-center space-y-4">
           {isDragActive ? (
             isDragAccept ? (
@@ -87,15 +110,27 @@ export function ImageDropzone({
             <div className="text-gray-500 group-hover:text-knoux-500 transition-colors">
               <Image className="w-12 h-12 mx-auto group-hover:scale-110 transition-transform" />
               <p className="mt-2 text-lg font-medium">
-                Drop images here or click to browse
+                اسحب الصور هنا أو اضغط للتصفح
               </p>
               <p className="text-sm text-gray-400 mt-1">
-                Supports JPEG, PNG, GIF, WebP, BMP, SVG
+                يدعم JPEG, PNG, GIF, WebP, BMP, SVG
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                Max {maxFiles} files, {Math.round(maxSize / (1024 * 1024))}MB
-                each
+                الحد الأقصى {maxFiles} ملف،{" "}
+                {Math.round(maxSize / (1024 * 1024))}ميجا لكل ملف
               </p>
+
+              {/* Folder Selection Buttons */}
+              <div className="flex justify-center gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={() => folderInputRef.current?.click()}
+                  className="px-4 py-2 bg-knoux-500 text-white rounded-lg hover:bg-knoux-600 transition-colors text-sm font-medium"
+                  disabled={disabled}
+                >
+                  📁 اختر مجلد كامل
+                </button>
+              </div>
             </div>
           )}
 

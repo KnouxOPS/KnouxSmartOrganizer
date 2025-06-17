@@ -284,6 +284,12 @@ export default function Index() {
                     onDrop={addImages}
                     disabled={isProcessing}
                     maxFiles={500}
+                    onFolderSelect={(files) => {
+                      toast.success(
+                        `📁 تم تحديد ${files.length} صورة من المجلد`,
+                      );
+                      addImages(files);
+                    }}
                   />
                 </CardContent>
               </Card>
