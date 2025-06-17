@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import Index from "@/pages/Index";
 import DesktopApp from "@/pages/DesktopApp";
 import ModernApp from "@/pages/ModernApp";
