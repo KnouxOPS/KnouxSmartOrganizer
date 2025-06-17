@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -664,7 +665,7 @@ export default function WorkingApp() {
                     disabled={isProcessing}
                   >
                     <FolderOpen className="w-6 h-6 mb-1" />
-                    <span className="text-xs">مج��د</span>
+                    <span className="text-xs">مجلد</span>
                   </Button>
                 </div>
 
@@ -778,7 +779,7 @@ export default function WorkingApp() {
                 </div>
 
                 <div>
-                  <Label>ترتيب حسب</Label>
+                  <Label>ترتي�� حسب</Label>
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger>
                       <SelectValue />
