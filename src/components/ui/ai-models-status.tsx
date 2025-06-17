@@ -115,17 +115,17 @@ export function AIModelsStatus({
                 onClick={handleDownloadModels}
                 disabled={isDownloading}
                 size="sm"
-                className="bg-knoux-600 hover:bg-knoux-700 text-white"
+                className="bg-gradient-to-r from-knoux-500 to-purple-600 hover:from-knoux-600 hover:to-purple-700 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 {isDownloading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    تحميل...
+                    جاري التحميل...
                   </>
                 ) : (
                   <>
                     <Download className="w-4 h-4 mr-2" />
-                    تحميل النماذج
+                    تحميل النماذج المتقدمة
                   </>
                 )}
               </Button>
