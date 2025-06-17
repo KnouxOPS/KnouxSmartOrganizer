@@ -143,192 +143,6 @@ export class AIEngine {
     }
   }
 
-  private async loadFaceAPIModels() {
-    this.updateModelStatus("face-detection", {
-      name: "Face Detection",
-      type: "detection",
-      loaded: false,
-      loading: true,
-      version: "1.0.0",
-      size: "2.1MB",
-    });
-
-    try {
-      // Check if models exist before loading
-      const modelCheck = await fetch(
-        "/models/face-api/tiny_face_detector_model-weights_manifest.json",
-      );
-
-      if (modelCheck.ok) {
-        // Models exist, load them
-        const MODEL_URL = "/models/face-api";
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-          faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL),
-          faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
-          faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL),
-        ]);
-
-        this.updateModelStatus("face-detection", {
-          name: "Face Detection",
-          type: "detection",
-          loaded: true,
-          loading: false,
-          version: "1.0.0",
-          size: "2.1MB",
-        });
-
-        this.models.set("face-api", faceapi);
-      } else {
-        // Models don't exist, use fallback
-        this.updateModelStatus("face-detection", {
-          name: "Face Detection (Fallback)",
-          type: "detection",
-          loaded: true,
-          loading: false,
-          version: "1.0.0 (Mock)",
-          size: "0MB",
-        });
-
-        // Create a mock face-api object for fallback
-        this.models.set("face-api", {
-          detectAllFaces: () => Promise.resolve([]),
-        });
-      }
-    } catch (error) {
-      // Fallback mode
-      console.warn("Face-API models not available, using fallback mode");
-      this.updateModelStatus("face-detection", {
-        name: "Face Detection (Fallback)",
-        type: "detection",
-        loaded: true,
-        loading: false,
-        version: "1.0.0 (Mock)",
-        size: "0MB",
-      });
-
-      this.models.set("face-api", {
-        detectAllFaces: () => Promise.resolve([]),
-      });
-    }
-  }
-
-  private async loadClassificationModel() {
-    this.updateModelStatus("classification", {
-      name: "Image Classification",
-      type: "classification",
-      loaded: false,
-      loading: true,
-      version: "1.0.0",
-      size: "4.2MB",
-    });
-
-    try {
-      // Check if custom model exists
-      const modelCheck = await fetch("/models/mobilenet/model.json");
-
-      if (modelCheck.ok) {
-        const model = await tf.loadLayersModel("/models/mobilenet/model.json");
-        this.models.set("classification", model);
-
-        this.updateModelStatus("classification", {
-          name: "Image Classification",
-          type: "classification",
-          loaded: true,
-          loading: false,
-          version: "1.0.0",
-          size: "4.2MB",
-        });
-      } else {
-        // Use rule-based fallback
-        this.updateModelStatus("classification", {
-          name: "Smart Classification (Fallback)",
-          type: "classification",
-          loaded: true,
-          loading: false,
-          version: "1.0.0 (Rule-based)",
-          size: "0MB",
-        });
-      }
-    } catch (error) {
-      // Fallback: use rule-based classification
-      this.updateModelStatus("classification", {
-        name: "Smart Classification (Fallback)",
-        type: "classification",
-        loaded: true,
-        loading: false,
-        version: "1.0.0 (Rule-based)",
-        size: "0MB",
-      });
-    }
-  }
-
-  private async initializeOCR() {
-    this.updateModelStatus("ocr", {
-      name: "OCR (Text Recognition)",
-      type: "ocr",
-      loaded: false,
-      loading: true,
-      version: "2.1.0",
-      size: "6.8MB",
-    });
-
-    try {
-      // Pre-load Tesseract worker with timeout
-      const worker = (await Promise.race([
-        Tesseract.createWorker(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("OCR load timeout")), 10000),
-        ),
-      ])) as any;
-
-      await worker.loadLanguage("eng");
-      await worker.initialize("eng");
-      await worker.terminate();
-
-      this.updateModelStatus("ocr", {
-        name: "OCR (Text Recognition)",
-        type: "ocr",
-        loaded: true,
-        loading: false,
-        version: "2.1.0",
-        size: "6.8MB",
-      });
-    } catch (error) {
-      console.warn("OCR initialization failed, using fallback mode");
-      this.updateModelStatus("ocr", {
-        name: "OCR (Basic Fallback)",
-        type: "ocr",
-        loaded: true,
-        loading: false,
-        version: "1.0.0 (Mock)",
-        size: "0MB",
-      });
-    }
-  }
-
-  private async initializeNSFWModel() {
-    this.updateModelStatus("nsfw", {
-      name: "Content Safety Filter",
-      type: "nsfw",
-      loaded: false,
-      loading: true,
-      version: "1.0.0",
-      size: "2.5MB",
-    });
-
-    // For now, use a simple fallback
-    this.updateModelStatus("nsfw", {
-      name: "Content Safety (Fallback)",
-      type: "nsfw",
-      loaded: true,
-      loading: false,
-      version: "1.0.0 (Rule-based)",
-      size: "0MB",
-    });
-  }
-
   private updateModelStatus(key: string, status: AIModel) {
     this.modelStatus.set(key, status);
   }
@@ -465,36 +279,79 @@ export class AIEngine {
     canvas: HTMLCanvasElement,
   ): Promise<FaceDetection[]> {
     const faceApi = this.models.get("face-api");
-    if (!faceApi) return [];
 
-    try {
-      const detections = await faceapi
-        .detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceExpressions()
-        .withAgeAndGender();
+    // If we have the real face-api loaded
+    if (faceApi && faceApi.detectAllFaces) {
+      try {
+        const detections = await faceApi
+          .detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks()
+          .withFaceExpressions()
+          .withAgeAndGender();
 
-      return detections.map((detection) => ({
-        bbox: {
-          x: detection.detection.box.x,
-          y: detection.detection.box.y,
-          width: detection.detection.box.width,
-          height: detection.detection.box.height,
-        },
-        confidence: detection.detection.score,
-        expressions: Object.entries(detection.expressions).map(
-          ([expression, confidence]) => ({
-            expression,
-            confidence: confidence as number,
-          }),
-        ),
-        age: detection.age,
-        gender: detection.gender,
-      }));
-    } catch (error) {
-      console.error("Face detection failed:", error);
-      return [];
+        return detections.map((detection) => ({
+          bbox: {
+            x: detection.detection.box.x,
+            y: detection.detection.box.y,
+            width: detection.detection.box.width,
+            height: detection.detection.box.height,
+          },
+          confidence: detection.detection.score,
+          expressions: Object.entries(detection.expressions).map(
+            ([expression, confidence]) => ({
+              expression,
+              confidence: confidence as number,
+            }),
+          ),
+          age: detection.age,
+          gender: detection.gender,
+        }));
+      } catch (error) {
+        console.error("Face detection failed:", error);
+      }
     }
+
+    // Fallback: Simple color-based face detection
+    return this.detectFacesFallback(canvas);
+  }
+
+  private detectFacesFallback(canvas: HTMLCanvasElement): FaceDetection[] {
+    // Simple heuristic: look for skin-colored regions
+    const ctx = canvas.getContext("2d")!;
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const pixels = imageData.data;
+
+    let skinPixels = 0;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const r = pixels[i];
+      const g = pixels[i + 1];
+      const b = pixels[i + 2];
+
+      // Simple skin color detection
+      if (r > 80 && g > 50 && b > 40 && r > b && r > g) {
+        skinPixels++;
+      }
+    }
+
+    const totalPixels = pixels.length / 4;
+    const skinRatio = skinPixels / totalPixels;
+
+    // If more than 15% skin pixels, assume there's a face
+    if (skinRatio > 0.15) {
+      return [
+        {
+          bbox: {
+            x: canvas.width * 0.25,
+            y: canvas.height * 0.2,
+            width: canvas.width * 0.5,
+            height: canvas.height * 0.6,
+          },
+          confidence: Math.min(skinRatio * 3, 0.8),
+        },
+      ];
+    }
+
+    return [];
   }
 
   private async extractText(file: File): Promise<OCRResult> {
