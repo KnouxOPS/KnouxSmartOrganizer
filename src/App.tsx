@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Index from "@/pages/Index";
 import DesktopApp from "@/pages/DesktopApp";
+import ModernApp from "@/pages/ModernApp";
 import NotFound from "@/pages/NotFound";
 import { Globe, HardDrive, Zap, Shield, Database, Cpu } from "lucide-react";
 import "./App.css";
 
 function App() {
-  const [appMode, setAppMode] = useState<"web" | "desktop" | "select">(
-    "select",
-  );
+  const [appMode, setAppMode] = useState<
+    "web" | "desktop" | "modern" | "select"
+  >("select");
 
   // تحقق من دعم File System Access API
   const supportsFileSystemAPI = "showDirectoryPicker" in window;
@@ -38,7 +39,53 @@ function App() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid md:grid-cols-3 gap-6">
+            {/* النسخة المتطورة - جديد */}
+            <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border-2 hover:border-green-500 ring-2 ring-green-200">
+              <CardContent className="p-6">
+                <div className="flex items-center mb-4">
+                  <div className="p-3 bg-green-100 rounded-lg mr-4">
+                    <Zap className="w-8 h-8 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-green-700">
+                      النسخة المتطورة
+                    </h3>
+                    <p className="text-gray-600">الأحدث مع ميزات متقدمة</p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center text-sm">
+                    <Cpu className="w-4 h-4 text-green-500 mr-2" />
+                    <span>شريط تقدم متقدم وحقيقي</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <Zap className="w-4 h-4 text-green-500 mr-2" />
+                    <span>رفع بالسحب والإفلات</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <Shield className="w-4 h-4 text-green-500 mr-2" />
+                    <span>اختيار مجلدات يعمل بالفعل</span>
+                  </div>
+                  <div className="flex items-center text-sm">
+                    <Database className="w-4 h-4 text-green-500 mr-2" />
+                    <span>معالجة فورية ومتطورة</span>
+                  </div>
+                  <div className="flex items-center text-sm font-bold text-green-600">
+                    <span>✨ مُوصى بها - الأفضل!</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => setAppMode("modern")}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  ابدأ النسخة المتطورة
+                </Button>
+              </CardContent>
+            </Card>
+
             {/* النسخة العادية */}
             <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border-2 hover:border-blue-500">
               <CardContent className="p-6">
@@ -47,7 +94,7 @@ function App() {
                     <Globe className="w-8 h-8 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">النسخة العادية</h3>
+                    <h3 className="text-xl font-bold">النسخة التجريبية</h3>
                     <p className="text-gray-600">للاستخدام السريع والتجريب</p>
                   </div>
                 </div>
@@ -74,7 +121,7 @@ function App() {
                   onClick={() => setAppMode("web")}
                   className="w-full bg-blue-600 hover:bg-blue-700"
                 >
-                  ابدأ النسخة العادية
+                  ابدأ النسخة التجريبية
                 </Button>
               </CardContent>
             </Card>
@@ -89,7 +136,7 @@ function App() {
                   <div>
                     <h3 className="text-xl font-bold">النسخة المحلية</h3>
                     <p className="text-gray-600">
-                      للاستخدام الاحترافي والملفات الكبيرة
+                      للملفات الضخمة والأمان التام
                     </p>
                   </div>
                 </div>
@@ -163,6 +210,8 @@ function App() {
       <div className="min-h-screen bg-gray-50">
         {appMode === "desktop" ? (
           <DesktopApp />
+        ) : appMode === "modern" ? (
+          <ModernApp />
         ) : (
           <Routes>
             <Route path="/" element={<Index />} />
