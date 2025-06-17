@@ -2,6 +2,40 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { useImageOrganizer } from "@/hooks/use-image-organizer";
+import { aiEngine } from "@/lib/ai-engine";
+import type { ImageFile } from "@/types/organizer";
+import {
   Brain,
   Sparkles,
   Zap,
@@ -48,51 +82,17 @@ import {
   AlertTriangle,
   CheckCircle,
   X,
+  Plus,
+  TrendingUp,
+  Activity,
+  ImageIcon,
+  Palette,
+  Mic,
+  Volume2,
+  MonitorSpeaker,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
-import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { ImageDropzone } from "@/components/ui/image-dropzone";
-import { ImageGrid } from "@/components/ui/image-grid";
-import { ProcessingDashboard } from "@/components/ui/processing-dashboard";
-import { FilterSidebar } from "@/components/ui/filter-sidebar";
-import { AIModelsStatus } from "@/components/ui/ai-models-status";
-import { useImageOrganizer } from "@/hooks/use-image-organizer";
-import { aiEngine } from "@/lib/ai-engine";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import type { ImageFile } from "@/types/organizer";
 
-// مكتبة صور تجريبية للعرض
+// البيانات التجريبية الحقيقية مع تحليل شامل
 const DEMO_IMAGES = [
   {
     id: "demo-1",
@@ -101,15 +101,15 @@ const DEMO_IMAGES = [
     category: "nature" as const,
     size: 2048576,
     processed: true,
-    tags: ["sunset", "beach", "nature", "ocean"],
+    tags: ["sunset", "beach", "nature", "ocean", "beautiful", "landscape"],
     analysis: {
-      description: "Beautiful sunset over ocean waves",
+      description: "منظر طبيعي خلاب لغروب الشمس على الشاطئ مع أمواج المحيط",
       confidence: 0.95,
       faces: [],
       text: { text: "", confidence: 0, words: [] },
       isNSFW: false,
       nsfwScore: 0.05,
-      dominantColors: ["#FF6B35", "#F7931E", "#FFD23F"],
+      dominantColors: ["#FF6B35", "#F7931E", "#FFD23F", "#4A90E2"],
     },
   },
   {
@@ -119,9 +119,9 @@ const DEMO_IMAGES = [
     category: "selfies" as const,
     size: 1876543,
     processed: true,
-    tags: ["family", "portrait", "people", "happy"],
+    tags: ["family", "portrait", "people", "happy", "group", "children"],
     analysis: {
-      description: "Happy family portrait with 4 people",
+      description: "صورة عائلية جميلة تضم 4 أشخاص سعداء",
       confidence: 0.92,
       faces: [
         { confidence: 0.98, age: 35, gender: "male" },
@@ -132,7 +132,7 @@ const DEMO_IMAGES = [
       text: { text: "", confidence: 0, words: [] },
       isNSFW: false,
       nsfwScore: 0.02,
-      dominantColors: ["#8B4513", "#DEB887", "#F5F5DC"],
+      dominantColors: ["#8B4513", "#DEB887", "#F5F5DC", "#2E8B57"],
     },
   },
   {
@@ -142,22 +142,22 @@ const DEMO_IMAGES = [
     category: "documents" as const,
     size: 1234567,
     processed: true,
-    tags: ["recipe", "document", "text", "cooking"],
+    tags: ["recipe", "document", "text", "cooking", "handwritten"],
     analysis: {
-      description: "Handwritten recipe document with ingredients list",
+      description: "وثيقة وصفة طبخ مكتوبة بخط اليد تحتوي على قائمة المكونات",
       confidence: 0.88,
       faces: [],
       text: {
-        text: "Chocolate Chip Cookies Recipe\n2 cups flour\n1 cup sugar\n1/2 cup butter\nBake at 350°F for 12 minutes",
+        text: "وصفة كوكيز الشوكولاتة\n2 كوب دقيق\n1 كوب سكر\n1/2 كوب زبدة\nاخبزي على 180 درجة لمدة 12 دقيقة",
         confidence: 0.91,
         words: [
           {
-            text: "Recipe",
+            text: "وصفة",
             confidence: 0.95,
             bbox: { x: 10, y: 5, width: 80, height: 20 },
           },
           {
-            text: "Chocolate",
+            text: "كوكيز",
             confidence: 0.93,
             bbox: { x: 10, y: 30, width: 100, height: 18 },
           },
@@ -165,7 +165,7 @@ const DEMO_IMAGES = [
       },
       isNSFW: false,
       nsfwScore: 0.01,
-      dominantColors: ["#FFFFFF", "#000000", "#F5F5F5"],
+      dominantColors: ["#FFFFFF", "#000000", "#F5F5F5", "#E8E8E8"],
     },
   },
   {
@@ -175,15 +175,15 @@ const DEMO_IMAGES = [
     category: "food" as const,
     size: 2987654,
     processed: true,
-    tags: ["pizza", "food", "cheese", "delicious"],
+    tags: ["pizza", "food", "cheese", "delicious", "italian", "dinner"],
     analysis: {
-      description: "Delicious pizza with cheese and toppings",
+      description: "بيتزا لذيذة بالجبن والطماطم والريحان الطازج",
       confidence: 0.97,
       faces: [],
       text: { text: "", confidence: 0, words: [] },
       isNSFW: false,
       nsfwScore: 0.03,
-      dominantColors: ["#FF6347", "#FFD700", "#228B22"],
+      dominantColors: ["#FF6347", "#FFD700", "#228B22", "#8B4513"],
     },
   },
   {
@@ -193,17 +193,17 @@ const DEMO_IMAGES = [
     category: "screenshots" as const,
     size: 876543,
     processed: true,
-    tags: ["screenshot", "app", "interface", "technology"],
+    tags: ["screenshot", "app", "interface", "technology", "mobile", "design"],
     analysis: {
-      description: "Mobile app interface screenshot",
+      description: "لقطة شاشة لواجهة تطبيق موبايل حديث",
       confidence: 0.85,
       faces: [],
       text: {
-        text: "Welcome to our app\nSign in to continue\nEmail: user@example.com",
+        text: "مرحباً بك في التطبيق\nسجل دخولك للمتابعة\nالبريد الإلكتروني: user@example.com",
         confidence: 0.87,
         words: [
           {
-            text: "Welcome",
+            text: "مرحباً",
             confidence: 0.92,
             bbox: { x: 50, y: 100, width: 120, height: 25 },
           },
@@ -211,7 +211,25 @@ const DEMO_IMAGES = [
       },
       isNSFW: false,
       nsfwScore: 0.02,
-      dominantColors: ["#4285F4", "#FFFFFF", "#F8F9FA"],
+      dominantColors: ["#4285F4", "#FFFFFF", "#F8F9FA", "#34A853"],
+    },
+  },
+  {
+    id: "demo-6",
+    name: "cityscape-night.jpg",
+    url: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=800&h=600&fit=crop",
+    category: "nature" as const,
+    size: 3456789,
+    processed: true,
+    tags: ["city", "night", "lights", "urban", "skyline", "buildings"],
+    analysis: {
+      description: "منظر ليلي رائع لأفق المدينة مع الأضواء المتلألئة",
+      confidence: 0.93,
+      faces: [],
+      text: { text: "", confidence: 0, words: [] },
+      isNSFW: false,
+      nsfwScore: 0.01,
+      dominantColors: ["#1a1a2e", "#16213e", "#0f3460", "#533a7b"],
     },
   },
 ];
@@ -258,22 +276,60 @@ export default function Index() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [batchSize, setBatchSize] = useState([10]);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [realTimeMode, setRealTimeMode] = useState(false);
+  const [autoSave, setAutoSave] = useState(true);
+
+  // دالة إضافة إشعار
+  const addNotification = useCallback((notification: any) => {
+    const id = Date.now().toString();
+    const newNotification = { ...notification, id };
+    setNotifications((prev) => [...prev, newNotification]);
+
+    // إزالة الإشعار تلقائياً بعد 5 ثوان
+    setTimeout(() => {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }, 5000);
+  }, []);
 
   // تحميل البيانات التجريبية عند بدء التطبيق
   useEffect(() => {
     if (showDemo && images.length === 0) {
+      addNotification({
+        type: "info",
+        title: "تحميل البيانات التجريبية",
+        description: "جاري تحميل صور تجريبية لعرض إمكانيات التطبيق",
+      });
+
       const demoFiles = DEMO_IMAGES.map((img) => ({
         ...img,
         file: new File([], img.name, { type: "image/jpeg" }),
-        createdAt: new Date(),
+        createdAt: new Date(
+          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
+        ),
         processedAt: new Date(),
       }));
+
       // محاكاة إضافة الصور التجريبية
       setTimeout(() => {
-        demoFiles.forEach((file) => addImages([file.file]));
-      }, 1000);
+        // تحويل البيانات التجريبية لتتناسب مع useImageOrganizer
+        const convertedFiles = demoFiles.map((file) => file.file);
+        addImages(convertedFiles);
+
+        addNotification({
+          type: "success",
+          title: "تم تحميل البيانات التجريبية",
+          description: `تم تحميل ${demoFiles.length} صورة مع تحليل الذكاء الاصطناعي`,
+        });
+
+        // إضافة كونفيتي احتفالي
+        confetti({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+      }, 1500);
     }
-  }, [showDemo, images.length, addImages]);
+  }, [showDemo, images.length, addImages, addNotification]);
 
   // تحديث نماذج الذكاء الاصطناعي
   useEffect(() => {
@@ -283,7 +339,58 @@ export default function Index() {
     return () => clearInterval(interval);
   }, []);
 
-  // معالجة البحث
+  // معالجة رفع الملفات
+  const handleFileUpload = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files || []);
+      if (files.length > 0) {
+        addImages(files);
+        addNotification({
+          type: "info",
+          title: "بدء رفع الملفات",
+          description: `جاري رفع ${files.length} ملف`,
+        });
+      }
+    },
+    [addImages, addNotification],
+  );
+
+  // تشغيل المعالجة
+  const handleStartProcessing = useCallback(async () => {
+    if (images.length === 0) {
+      toast.error("لا توجد صور للمعالجة");
+      return;
+    }
+
+    addNotification({
+      type: "info",
+      title: "بدء المعالجة",
+      description: "جاري تشغيل خوارزميات الذكاء الاصطناعي",
+    });
+
+    try {
+      await processImages();
+      addNotification({
+        type: "success",
+        title: "اكتملت المعالجة",
+        description: "تم تحليل جميع الصور بنجاح",
+      });
+
+      confetti({
+        particleCount: 50,
+        spread: 50,
+        origin: { y: 0.7 },
+      });
+    } catch (error) {
+      addNotification({
+        type: "error",
+        title: "خطأ في المعالجة",
+        description: "حدث خطأ أثناء معالجة الصور",
+      });
+    }
+  }, [images.length, processImages, addNotification]);
+
+  // فلترة وترتيب الصور
   const filteredImages = images.filter((img) => {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -299,7 +406,6 @@ export default function Index() {
     return true;
   });
 
-  // ترتيب الصور
   const sortedImages = [...filteredImages].sort((a, b) => {
     switch (sortBy) {
       case "name":
@@ -313,109 +419,6 @@ export default function Index() {
         return b.createdAt.getTime() - a.createdAt.getTime();
     }
   });
-
-  // معالجة ذكية للصور
-  const handleSmartOrganize = async () => {
-    if (images.length === 0) {
-      toast.error("لا توجد صور للمعالجة!");
-      return;
-    }
-
-    try {
-      toast.info("🧠 بدء المعالجة الذكية...", {
-        description: `معالجة ${unprocessedCount} صورة بالذكاء الاصطناعي`,
-      });
-
-      await processImages();
-
-      // احتفال بالنجاح
-      confetti({
-        particleCount: 200,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ["#10b981", "#3b82f6", "#8b5cf6"],
-      });
-
-      toast.success("🎉 تم تنظيم الصور بنجاح!", {
-        description: `تم معالجة ${processedCount} صورة وتص��يفها ذكياً`,
-      });
-
-      // إضافة إشعار
-      addNotification({
-        type: "success",
-        title: "تم التنظيم بنجاح",
-        description: `${processedCount} صورة تم تنظيمها`,
-        timestamp: new Date(),
-      });
-    } catch (error) {
-      toast.error("❌ فشلت المعالجة", {
-        description: "حدث خطأ أثناء معالجة الصور",
-      });
-    }
-  };
-
-  // إضافة إشعار
-  const addNotification = useCallback((notification: any) => {
-    const newNotification = {
-      ...notification,
-      id: Date.now(),
-    };
-    setNotifications((prev) => [newNotification, ...prev.slice(0, 4)]);
-
-    // إزالة الإشعار بعد 5 ثواني
-    setTimeout(() => {
-      setNotifications((prev) =>
-        prev.filter((n) => n.id !== newNotification.id),
-      );
-    }, 5000);
-  }, []);
-
-  // معالجة الإجراءات المجمعة
-  const handleBulkAction = (action: string) => {
-    const selectedCount = selectedImages.size;
-
-    switch (action) {
-      case "delete":
-        selectedImages.forEach((id) => removeImage(id));
-        setSelectedImages(new Set());
-        toast.success(`تم حذف ${selectedCount} صورة`);
-        break;
-
-      case "favorite":
-        selectedImages.forEach((id) => {
-          setFavorites((prev) => new Set([...prev, id]));
-        });
-        toast.success(`تم إضافة ${selectedCount} صورة للمفضلة`);
-        break;
-
-      case "bookmark":
-        selectedImages.forEach((id) => {
-          setBookmarks((prev) => new Set([...prev, id]));
-        });
-        toast.success(`تم وضع علامة مرجعية على ${selectedCount} صورة`);
-        break;
-
-      case "export":
-        exportResults();
-        toast.success(`تم تصدير ${selectedCount} صورة`);
-        break;
-    }
-  };
-
-  // تبديل المفضلة
-  const toggleFavorite = (id: string) => {
-    setFavorites((prev) => {
-      const newFavorites = new Set(prev);
-      if (newFavorites.has(id)) {
-        newFavorites.delete(id);
-        toast.info("تم إزالة من المفضلة");
-      } else {
-        newFavorites.add(id);
-        toast.success("تم إضافة للمفضلة");
-      }
-      return newFavorites;
-    });
-  };
 
   // إحصائيات متقدمة
   const advancedStats = {
@@ -436,6 +439,51 @@ export default function Index() {
     ).length,
     nsfwImages: images.filter((img) => img.analysis?.isNSFW).length,
     duplicates: images.filter((img) => img.category === "duplicates").length,
+    categoryDistribution: images.reduce(
+      (acc, img) => {
+        acc[img.category || "uncategorized"] =
+          (acc[img.category || "uncategorized"] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    ),
+  };
+
+  // عمليات مجمعة
+  const handleBulkAction = (action: string) => {
+    const selectedCount = selectedImages.size;
+
+    switch (action) {
+      case "delete":
+        selectedImages.forEach((id) => removeImage(id));
+        setSelectedImages(new Set());
+        toast.success(`تم حذف ${selectedCount} صورة`);
+        break;
+      case "favorite":
+        selectedImages.forEach((id) => favorites.add(id));
+        setFavorites(new Set(favorites));
+        toast.success(`تم إضافة ${selectedCount} صورة للمفضلة`);
+        break;
+      case "export":
+        exportResults();
+        toast.success(`تم تصدير ${selectedCount} صورة`);
+        break;
+    }
+  };
+
+  // تبديل المفضلة
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) => {
+      const newFavorites = new Set(prev);
+      if (newFavorites.has(id)) {
+        newFavorites.delete(id);
+        toast.info("تم إزالة من المفضلة");
+      } else {
+        newFavorites.add(id);
+        toast.success("تم إضافة للمفضلة");
+      }
+      return newFavorites;
+    });
   };
 
   return (
@@ -494,11 +542,11 @@ export default function Index() {
           <div className="flex items-center justify-between h-16">
             {/* العلامة التجارية */}
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-knoux rounded-xl shadow-lg">
+              <div className="p-2 bg-gradient-to-r from-knoux-500 to-purple-600 rounded-xl shadow-lg">
                 <Brain className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold knoux-text-gradient">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-knoux-600 to-purple-600 bg-clip-text text-transparent">
                   Knoux SmartOrganizer PRO
                 </h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -597,21 +645,17 @@ export default function Index() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowStats(!showStats)}>
                     <BarChart3 className="w-4 h-4 mr-2" />
-                    إظهار الإحصائيات
+                    لوحة الإحصائيات
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => setAutoOrganize(!autoOrganize)}
+                    onClick={() => setRealTimeMode(!realTimeMode)}
                   >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    التنظيم التلقائي
-                    {autoOrganize && (
-                      <CheckCircle className="w-4 h-4 ml-auto text-green-500" />
-                    )}
+                    <Activity className="w-4 h-4 mr-2" />
+                    الوضع الفوري
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setShowDemo(!showDemo)}>
-                    <Image className="w-4 h-4 mr-2" />
-                    البيانات التجريبية
+                  <DropdownMenuItem onClick={() => setAutoSave(!autoSave)}>
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    الحفظ التلقائي
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -620,102 +664,171 @@ export default function Index() {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-4rem)]">
-        {/* الشريط الجانبي للفلاتر المتطورة */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ x: -300, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -300, opacity: 0 }}
-              className="w-80 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto"
-            >
-              <div className="p-6 space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">فلاتر ذكية</h3>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* الشريط الجانبي للفلاتر والتحكم */}
+          <div
+            className={cn(
+              "lg:col-span-3 space-y-6",
+              !showFilters && "hidden lg:block",
+            )}
+          >
+            {/* أدوات الرفع */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Upload className="w-5 h-5 mr-2" />
+                  رفع الصور
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-2">
                   <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowFilters(false)}
+                    onClick={() =>
+                      document.getElementById("file-upload")?.click()
+                    }
+                    className="w-full"
                   >
-                    <X className="w-4 h-4" />
+                    <ImageIcon className="w-4 h-4 mr-2" />
+                    اختر ملفات
+                  </Button>
+                  <Button
+                    onClick={() =>
+                      document.getElementById("folder-upload")?.click()
+                    }
+                    variant="outline"
+                    className="w-full"
+                  >
+                    <Folder className="w-4 h-4 mr-2" />
+                    اختر مجلد
                   </Button>
                 </div>
 
-                {/* فلتر المجلدات */}
-                <div>
-                  <Label className="text-sm font-medium mb-3 block">
-                    المجلدات
-                  </Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      {
-                        key: "all",
-                        label: "الكل",
-                        icon: Folder,
-                        count: images.length,
-                      },
-                      {
-                        key: "nature",
-                        label: "طبيعة",
-                        icon: Sparkles,
-                        count: images.filter((i) => i.category === "nature")
-                          .length,
-                      },
-                      {
-                        key: "selfies",
-                        label: "شخصية",
-                        icon: Users,
-                        count: images.filter((i) => i.category === "selfies")
-                          .length,
-                      },
-                      {
-                        key: "documents",
-                        label: "وثائق",
-                        icon: FileText,
-                        count: images.filter((i) => i.category === "documents")
-                          .length,
-                      },
-                      {
-                        key: "food",
-                        label: "طعام",
-                        icon: Heart,
-                        count: images.filter((i) => i.category === "food")
-                          .length,
-                      },
-                      {
-                        key: "screenshots",
-                        label: "لقطات",
-                        icon: Camera,
-                        count: images.filter(
-                          (i) => i.category === "screenshots",
-                        ).length,
-                      },
-                    ].map((folder) => (
-                      <Button
-                        key={folder.key}
-                        variant={
-                          currentFolder === folder.key ? "default" : "outline"
-                        }
-                        size="sm"
-                        className="flex flex-col h-auto p-3"
-                        onClick={() => setCurrentFolder(folder.key)}
-                      >
-                        <folder.icon className="w-4 h-4 mb-1" />
-                        <span className="text-xs">{folder.label}</span>
-                        <Badge variant="secondary" className="text-xs mt-1">
-                          {folder.count}
-                        </Badge>
-                      </Button>
-                    ))}
+                <input
+                  id="file-upload"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <input
+                  id="folder-upload"
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+
+                <Separator />
+
+                {/* أزرار المعالجة */}
+                <div className="space-y-2">
+                  <Button
+                    onClick={handleStartProcessing}
+                    disabled={isProcessing || images.length === 0}
+                    className="w-full"
+                  >
+                    {isProcessing ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Play className="w-4 h-4 mr-2" />
+                    )}
+                    {isProcessing ? "جاري المعالجة..." : "ابدأ المعالجة"}
+                  </Button>
+
+                  {isProcessing && (
+                    <Button
+                      onClick={stopProcessing}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      <Pause className="w-4 h-4 mr-2" />
+                      إيقاف المعالجة
+                    </Button>
+                  )}
+
+                  <Button
+                    onClick={clearAll}
+                    variant="destructive"
+                    className="w-full"
+                    disabled={images.length === 0}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    مسح الكل
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* حالة نماذج الذكاء الاصطناعي */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Cpu className="w-5 h-5 mr-2" />
+                  نماذج الذكاء الاصطناعي
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {Array.from(aiModels.values()).map((model) => (
+                  <div key={model.name} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{model.name}</span>
+                      <div
+                        className={cn(
+                          "w-2 h-2 rounded-full",
+                          model.loaded
+                            ? "bg-green-500"
+                            : model.loading
+                              ? "bg-yellow-500 animate-pulse"
+                              : "bg-red-500",
+                        )}
+                      />
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {model.loaded
+                        ? "جاهز"
+                        : model.loading
+                          ? "جاري التحميل..."
+                          : "غير محمل"}
+                    </div>
                   </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* الفلاتر */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Filter className="w-5 h-5 mr-2" />
+                  تصفية الصور
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>التصنيف</Label>
+                  <Select
+                    value={currentFolder}
+                    onValueChange={setCurrentFolder}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر التصنيف" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">جميع الصور</SelectItem>
+                      <SelectItem value="nature">طبيعة</SelectItem>
+                      <SelectItem value="food">طعام</SelectItem>
+                      <SelectItem value="selfies">صور شخصية</SelectItem>
+                      <SelectItem value="documents">وثائق</SelectItem>
+                      <SelectItem value="screenshots">لقطات شاشة</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                {/* ترتيب الصور */}
                 <div>
-                  <Label className="text-sm font-medium mb-3 block">
-                    ترتيب حسب
-                  </Label>
+                  <Label>ترتيب حسب</Label>
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger>
                       <SelectValue />
@@ -729,858 +842,563 @@ export default function Index() {
                   </Select>
                 </div>
 
-                {/* عتبة الذكاء الاصطناعي */}
-                <div>
-                  <Label className="text-sm font-medium mb-3 block">
-                    عتبة الذكاء الاصطناعي: {Math.round(aiThreshold[0] * 100)}%
-                  </Label>
-                  <Slider
-                    value={aiThreshold}
-                    onValueChange={setAiThreshold}
-                    max={1}
-                    min={0.1}
-                    step={0.1}
-                    className="w-full"
-                  />
+                <div className="flex items-center space-x-2">
+                  <Switch checked={showDemo} onCheckedChange={setShowDemo} />
+                  <Label>عرض البيانات التجريبية</Label>
                 </div>
+              </CardContent>
+            </Card>
 
-                {/* سرعة المعالجة */}
-                <div>
-                  <Label className="text-sm font-medium mb-3 block">
-                    سرعة المعالجة
-                  </Label>
-                  <Select
-                    value={processingSpeed}
-                    onValueChange={setProcessingSpeed}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fast">سريع (دقة أقل)</SelectItem>
-                      <SelectItem value="balanced">متوازن</SelectItem>
-                      <SelectItem value="precise">دقيق (أبطأ)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* حجم الدفعة */}
-                <div>
-                  <Label className="text-sm font-medium mb-3 block">
-                    حجم الدفعة: {batchSize[0]} صورة
-                  </Label>
-                  <Slider
-                    value={batchSize}
-                    onValueChange={setBatchSize}
-                    max={50}
-                    min={1}
-                    step={1}
-                    className="w-full"
-                  />
-                </div>
-
-                {/* مفاتيح سريعة */}
-                <div>
-                  <Label className="text-sm font-medium mb-3 block">
-                    مفاتيح سريعة
-                  </Label>
-                  <div className="space-y-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() =>
-                        setSelectedImages(new Set(images.map((i) => i.id)))
-                      }
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      تحديد الكل
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => setSelectedImages(new Set())}
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      إلغاء التحديد
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-start"
-                      onClick={() => {
-                        const unprocessed = images
-                          .filter((i) => !i.processed)
-                          .map((i) => i.id);
-                        setSelectedImages(new Set(unprocessed));
-                      }}
-                    >
-                      <Clock className="w-4 h-4 mr-2" />
-                      غير المعالجة
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* المحتوى الرئيسي */}
-        <div className="flex-1 overflow-hidden">
-          <div className="h-full overflow-y-auto">
-            <div className="max-w-7xl mx-auto p-6 space-y-6">
-              {/* لوحة الإحصائيات السريعة */}
-              {showStats && (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-                  <Card className="text-center">
-                    <CardContent className="p-4">
-                      <Image className="w-6 h-6 mx-auto mb-2 text-blue-500" />
-                      <div className="text-2xl font-bold">{images.length}</div>
-                      <div className="text-xs text-gray-500">إجمالي الصور</div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="text-center">
-                    <CardContent className="p-4">
-                      <Brain className="w-6 h-6 mx-auto mb-2 text-purple-500" />
-                      <div className="text-2xl font-bold">{processedCount}</div>
-                      <div className="text-xs text-gray-500">تم معالجتها</div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="text-center">
-                    <CardContent className="p-4">
-                      <Users className="w-6 h-6 mx-auto mb-2 text-green-500" />
-                      <div className="text-2xl font-bold">
-                        {advancedStats.faceCount}
-                      </div>
-                      <div className="text-xs text-gray-500">وجوه مكتشفة</div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="text-center">
-                    <CardContent className="p-4">
-                      <FileText className="w-6 h-6 mx-auto mb-2 text-orange-500" />
-                      <div className="text-2xl font-bold">
-                        {advancedStats.textImages}
-                      </div>
-                      <div className="text-xs text-gray-500">تحتوي على نص</div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="text-center">
-                    <CardContent className="p-4">
-                      <Heart className="w-6 h-6 mx-auto mb-2 text-red-500" />
-                      <div className="text-2xl font-bold">{favorites.size}</div>
-                      <div className="text-xs text-gray-500">مفضلة</div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="text-center">
-                    <CardContent className="p-4">
-                      <Bookmark className="w-6 h-6 mx-auto mb-2 text-yellow-500" />
-                      <div className="text-2xl font-bold">{bookmarks.size}</div>
-                      <div className="text-xs text-gray-500">علامات مرجعية</div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="text-center">
-                    <CardContent className="p-4">
-                      <Copy className="w-6 h-6 mx-auto mb-2 text-gray-500" />
-                      <div className="text-2xl font-bold">
-                        {advancedStats.duplicates}
-                      </div>
-                      <div className="text-xs text-gray-500">مكررة</div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="text-center">
-                    <CardContent className="p-4">
-                      <Target className="w-6 h-6 mx-auto mb-2 text-indigo-500" />
-                      <div className="text-2xl font-bold">
-                        {Math.round(advancedStats.averageConfidence * 100)}%
-                      </div>
-                      <div className="text-xs text-gray-500">متوسط الدقة</div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {/* منطقة رفع الصور المتطورة */}
-              <Card className="border-2 border-dashed border-knoux-300 hover:border-knoux-500 transition-colors">
-                <CardContent className="p-8">
-                  <div className="text-center space-y-4">
-                    <div className="flex justify-center">
-                      <div className="relative">
-                        <div className="w-16 h-16 bg-gradient-knoux rounded-2xl flex items-center justify-center shadow-lg">
-                          <Upload className="w-8 h-8 text-white" />
-                        </div>
-                        <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center">
-                          <Zap className="w-3 h-3 text-yellow-800" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-xl font-bold mb-2">
-                        رفع الصور للمعالجة الذكية
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-400">
-                        اسحب وأفلت الصور هنا أو انقر للتصفح
-                      </p>
-                    </div>
-
-                    <ImageDropzone
-                      onDrop={addImages}
-                      disabled={isProcessing}
-                      maxFiles={500}
-                      className="border-0 bg-transparent"
+            {/* الإعدادات المتقدمة */}
+            {showAdvanced && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Settings className="w-5 h-5 mr-2" />
+                    إعدادات متقدمة
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>عتبة الذكاء الاصطناعي: {aiThreshold[0]}%</Label>
+                    <Slider
+                      value={aiThreshold}
+                      onValueChange={setAiThreshold}
+                      max={100}
+                      min={10}
+                      step={5}
+                      className="mt-2"
                     />
+                  </div>
 
-                    {/* إحصائيات الرفع */}
-                    <div className="flex justify-center space-x-6 text-sm text-gray-500">
-                      <div className="flex items-center space-x-1">
-                        <CheckCircle className="w-4 h-4 text-green-500" />
-                        <span>يدعم: JPG, PNG, GIF, WebP</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <Zap className="w-4 h-4 text-yellow-500" />
-                        <span>حد أقصى: 500 صورة</span>
-                      </div>
+                  <div>
+                    <Label>حجم الدفعة: {batchSize[0]}</Label>
+                    <Slider
+                      value={batchSize}
+                      onValueChange={setBatchSize}
+                      max={50}
+                      min={1}
+                      step={5}
+                      className="mt-2"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>سرعة المعالجة</Label>
+                    <Select
+                      value={processingSpeed}
+                      onValueChange={setProcessingSpeed}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fast">سريع</SelectItem>
+                        <SelectItem value="balanced">متوازن</SelectItem>
+                        <SelectItem value="accurate">دقيق</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={autoOrganize}
+                        onCheckedChange={setAutoOrganize}
+                      />
+                      <Label>تنظيم تلقائي</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={realTimeMode}
+                        onCheckedChange={setRealTimeMode}
+                      />
+                      <Label>معالجة فورية</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={autoSave}
+                        onCheckedChange={setAutoSave}
+                      />
+                      <Label>حفظ تلقائي</Label>
                     </div>
                   </div>
                 </CardContent>
               </Card>
+            )}
+          </div>
 
-              {/* أدوات المعالجة الذكية */}
-              {images.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Cpu className="w-6 h-6 text-knoux-600" />
-                        <span>مركز التحكم الذكي</span>
-                      </div>
-                      <Badge variant="outline">
-                        {unprocessedCount} غير معالج / {images.length} المجموع
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* أزرار الإجراءات الرئيسية */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <Button
-                        onClick={handleSmartOrganize}
-                        disabled={isProcessing || unprocessedCount === 0}
-                        className="h-24 bg-gradient-knoux text-white flex flex-col items-center justify-center p-4 hover:shadow-lg transition-all"
-                        size="lg"
-                      >
-                        {isProcessing ? (
-                          <>
-                            <Loader2 className="w-8 h-8 mb-2 animate-spin" />
-                            <span className="text-sm">جاري المعالجة...</span>
-                            <span className="text-xs opacity-75">
-                              {progress.current}/{progress.total}
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-8 h-8 mb-2" />
-                            <span className="font-semibold">تشغيل AI</span>
-                            <span className="text-xs opacity-75">
-                              معالجة ذكية شاملة
-                            </span>
-                          </>
-                        )}
-                      </Button>
-
-                      <Button
-                        onClick={() => {
-                          const faceImages = images.filter(
-                            (img) =>
-                              img.analysis?.faces &&
-                              img.analysis.faces.length > 0,
-                          );
-                          toast.success(
-                            `🧍 عثرت على ${faceImages.length} صورة تحتوي على وجوه`,
-                          );
-                        }}
-                        className="h-24 bg-gradient-to-br from-purple-500 to-pink-500 text-white flex flex-col items-center justify-center p-4 hover:shadow-lg transition-all"
-                        size="lg"
-                      >
-                        <Users className="w-8 h-8 mb-2" />
-                        <span className="font-semibold">كشف الوجوه</span>
-                        <span className="text-xs opacity-75">
-                          {advancedStats.faceCount} وجه مكتشف
-                        </span>
-                      </Button>
-
-                      <Button
-                        onClick={() => {
-                          const textImages = images.filter(
-                            (img) =>
-                              img.analysis?.text &&
-                              img.analysis.text.text.length > 10,
-                          );
-                          toast.success(
-                            `📄 عثرت على ${textImages.length} وثيقة تحتوي على نص`,
-                          );
-                        }}
-                        className="h-24 bg-gradient-to-br from-blue-500 to-cyan-500 text-white flex flex-col items-center justify-center p-4 hover:shadow-lg transition-all"
-                        size="lg"
-                      >
-                        <FileText className="w-8 h-8 mb-2" />
-                        <span className="font-semibold">استخراج النص</span>
-                        <span className="text-xs opacity-75">
-                          {advancedStats.textImages} وثيقة
-                        </span>
-                      </Button>
-
-                      <Button
-                        onClick={() => {
-                          const duplicates = images.filter(
-                            (img) => img.category === "duplicates",
-                          );
-                          toast.info(
-                            `🔍 عثرت على ${duplicates.length} صورة مكررة`,
-                          );
-                        }}
-                        className="h-24 bg-gradient-to-br from-orange-500 to-red-500 text-white flex flex-col items-center justify-center p-4 hover:shadow-lg transition-all"
-                        size="lg"
-                      >
-                        <Copy className="w-8 h-8 mb-2" />
-                        <span className="font-semibold">كشف التكرار</span>
-                        <span className="text-xs opacity-75">
-                          {advancedStats.duplicates} مكررة
-                        </span>
-                      </Button>
-                    </div>
-
-                    {/* شريط التقدم المتقدم */}
-                    {isProcessing && (
-                      <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
-                        <CardContent className="p-4">
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-medium">
-                                معالجة الصور بالذكاء الاصطناعي
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                {progress.current} / {progress.total}
-                              </span>
-                            </div>
-
-                            <Progress
-                              value={(progress.current / progress.total) * 100}
-                              className="h-2 bg-white dark:bg-gray-700"
-                            />
-
-                            <div className="flex items-center justify-between text-xs text-gray-500">
-                              <span>الملف الحالي: {progress.currentFile}</span>
-                              <span>المرحلة: {progress.stage}</span>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
-
-                    {/* إعدادات المعالجة */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      {[
-                        {
-                          key: "autoRename",
-                          label: "إعادة تسمية تلقائية",
-                          icon: Edit3,
-                        },
-                        {
-                          key: "detectFaces",
-                          label: "كشف الوجوه",
-                          icon: Users,
-                        },
-                        {
-                          key: "extractText",
-                          label: "استخراج النص",
-                          icon: FileText,
-                        },
-                        {
-                          key: "findDuplicates",
-                          label: "البحث عن المكرر",
-                          icon: Copy,
-                        },
-                      ].map(({ key, label, icon: Icon }) => (
-                        <div key={key} className="flex items-center space-x-2">
-                          <Switch
-                            id={key}
-                            checked={
-                              organizeOptions[
-                                key as keyof typeof organizeOptions
-                              ] as boolean
-                            }
-                            onCheckedChange={(checked) =>
-                              setOrganizeOptions({
-                                ...organizeOptions,
-                                [key]: checked,
-                              })
-                            }
-                          />
-                          <div className="flex items-center space-x-2">
-                            <Icon className="w-4 h-4 text-gray-500" />
-                            <Label
-                              htmlFor={key}
-                              className="text-sm cursor-pointer"
-                            >
-                              {label}
-                            </Label>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* أشرطة الإجراءات المجمعة */}
-              {selectedImages.size > 0 && (
-                <Card className="border-knoux-200 bg-knoux-50 dark:bg-knoux-900/20">
-                  <CardContent className="p-4">
+          {/* المنطقة الرئيسية */}
+          <div className="lg:col-span-9 space-y-6">
+            {/* شريط التقدم */}
+            {isProcessing && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <CheckCircle className="w-5 h-5 text-knoux-600" />
-                        <span className="font-medium">
-                          تم تحديد {selectedImages.size} صورة
-                        </span>
-                      </div>
+                      <span className="text-sm font-medium">
+                        {progress.stage}: {progress.message}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {progress.current} / {progress.total}
+                      </span>
+                    </div>
+                    <Progress
+                      value={(progress.current / progress.total) * 100}
+                      className="h-2"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleBulkAction("favorite")}
-                        >
-                          <Heart className="w-4 h-4 mr-1" />
-                          مفضلة
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleBulkAction("bookmark")}
-                        >
-                          <Bookmark className="w-4 h-4 mr-1" />
-                          علامة مرجعية
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleBulkAction("export")}
-                        >
-                          <Download className="w-4 h-4 mr-1" />
-                          تصدير
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleBulkAction("delete")}
-                          className="text-red-600 border-red-300 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          حذف
-                        </Button>
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedImages(new Set())}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+            {/* الإحصائيات */}
+            {showStats && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center space-x-2">
+                      <ImageIcon className="w-8 h-8 text-blue-500" />
+                      <div>
+                        <p className="text-2xl font-bold">{images.length}</p>
+                        <p className="text-xs text-gray-500">إجمالي الصور</p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-              )}
 
-              {/* عرض الصور المتطور */}
-              {sortedImages.length > 0 ? (
-                <div className="space-y-4">
-                  {/* معلومات العرض */}
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      عرض {sortedImages.length} من {images.length} صورة
-                      {searchQuery && ` • البحث: "${searchQuery}"`}
-                      {currentFolder !== "all" && ` • المجلد: ${currentFolder}`}
-                    </div>
-
+                <Card>
+                  <CardContent className="pt-6">
                     <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          setSelectedImages(
-                            new Set(sortedImages.map((img) => img.id)),
-                          )
-                        }
-                      >
-                        تحديد الكل
-                      </Button>
+                      <Brain className="w-8 h-8 text-purple-500" />
+                      <div>
+                        <p className="text-2xl font-bold">{processedCount}</p>
+                        <p className="text-xs text-gray-500">معالجة</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem onClick={exportResults}>
-                            <Download className="w-4 h-4 mr-2" />
-                            تصدير الكل
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={clearAll}>
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            حذف الكل
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center space-x-2">
+                      <Users className="w-8 h-8 text-green-500" />
+                      <div>
+                        <p className="text-2xl font-bold">
+                          {advancedStats.faceCount}
+                        </p>
+                        <p className="text-xs text-gray-500">وجه مكتشف</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex items-center space-x-2">
+                      <Heart className="w-8 h-8 text-red-500" />
+                      <div>
+                        <p className="text-2xl font-bold">{favorites.size}</p>
+                        <p className="text-xs text-gray-500">مفضلة</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* إحصائيات متقدمة */}
+            {showStats && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <TrendingUp className="w-5 h-5 mr-2" />
+                    تحليلات متقدمة
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-blue-600">
+                        {(advancedStats.totalSize / 1024 / 1024).toFixed(1)} MB
+                      </p>
+                      <p className="text-xs text-gray-500">الحجم الإجمالي</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-green-600">
+                        {Math.round(advancedStats.averageConfidence * 100)}%
+                      </p>
+                      <p className="text-xs text-gray-500">متوسط الدقة</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-purple-600">
+                        {advancedStats.textImages}
+                      </p>
+                      <p className="text-xs text-gray-500">صور تحتوي نص</p>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            )}
 
-                  {/* شبكة الصور */}
-                  <div
-                    className={cn(
-                      "grid gap-4",
-                      viewMode === "grid"
-                        ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-                        : "grid-cols-1",
-                    )}
-                  >
-                    <AnimatePresence>
-                      {sortedImages.map((image, index) => (
-                        <motion.div
-                          key={image.id}
-                          initial={{ opacity: 0, scale: 0.8 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.8 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="group relative"
+            {/* أدوات الإجراءات المجمعة */}
+            {selectedImages.size > 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">
+                      تم تحديد {selectedImages.size} صورة
+                    </span>
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleBulkAction("favorite")}
+                      >
+                        <Heart className="w-4 h-4 mr-2" />
+                        إضافة للمفضلة
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleBulkAction("export")}
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        تصدير
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleBulkAction("delete")}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        حذف
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* عرض الصور */}
+            {sortedImages.length > 0 ? (
+              <div className="space-y-4">
+                {/* معلومات العرض */}
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    عرض {sortedImages.length} من {images.length} صورة
+                    {searchQuery && ` • البحث: "${searchQuery}"`}
+                    {currentFolder !== "all" && ` • المجلد: ${currentFolder}`}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setSelectedImages(
+                          new Set(sortedImages.map((img) => img.id)),
+                        )
+                      }
+                    >
+                      تحديد الكل
+                    </Button>
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onClick={exportResults}>
+                          <Download className="w-4 h-4 mr-2" />
+                          تصدير الكل
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={clearAll}>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          حذف الكل
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+
+                {/* شبكة الصور */}
+                <div
+                  className={cn(
+                    "grid gap-4",
+                    viewMode === "grid"
+                      ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+                      : "grid-cols-1",
+                  )}
+                >
+                  <AnimatePresence>
+                    {sortedImages.map((image, index) => (
+                      <motion.div
+                        key={image.id}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="group relative"
+                      >
+                        <Card
+                          className={cn(
+                            "overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer",
+                            selectedImages.has(image.id) &&
+                              "ring-2 ring-knoux-500 ring-offset-2",
+                            viewMode === "list" && "flex flex-row",
+                          )}
                         >
-                          <Card
+                          {/* منطق�� الصورة */}
+                          <div
                             className={cn(
-                              "overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer",
-                              selectedImages.has(image.id) &&
-                                "ring-2 ring-knoux-500 ring-offset-2",
-                              viewMode === "list" && "flex flex-row",
+                              "relative aspect-square bg-gray-100 dark:bg-gray-800",
+                              viewMode === "list" && "w-32 h-32 flex-shrink-0",
                             )}
                           >
-                            {/* منطقة الصورة */}
-                            <div
-                              className={cn(
-                                "relative aspect-square bg-gray-100 dark:bg-gray-800",
-                                viewMode === "list" &&
-                                  "w-32 h-32 flex-shrink-0",
-                              )}
-                            >
-                              <img
-                                src={image.url}
-                                alt={image.name}
-                                className="w-full h-full object-cover"
-                                onClick={() => setPreviewImage(image)}
-                              />
+                            <img
+                              src={image.url}
+                              alt={image.name}
+                              className="w-full h-full object-cover"
+                              onClick={() => setPreviewImage(image)}
+                            />
 
-                              {/* حالة المعالجة */}
-                              <div className="absolute top-2 right-2">
-                                {image.processed ? (
-                                  <div className="bg-green-500 rounded-full p-1">
-                                    <CheckCircle className="w-4 h-4 text-white" />
-                                  </div>
-                                ) : (
-                                  <div className="bg-yellow-500 rounded-full p-1">
-                                    <Clock className="w-4 h-4 text-white" />
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* تصنيف الصورة */}
-                              {image.category && (
-                                <div className="absolute top-2 left-2">
-                                  <Badge className="text-xs px-2 py-1">
-                                    {image.category}
-                                  </Badge>
+                            {/* حالة المعالجة */}
+                            <div className="absolute top-2 right-2">
+                              {image.processed ? (
+                                <div className="bg-green-500 rounded-full p-1">
+                                  <CheckCircle className="w-4 h-4 text-white" />
+                                </div>
+                              ) : (
+                                <div className="bg-yellow-500 rounded-full p-1">
+                                  <Clock className="w-4 h-4 text-white" />
                                 </div>
                               )}
-
-                              {/* أدوات سريعة */}
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleFavorite(image.id);
-                                  }}
-                                  className={cn(
-                                    favorites.has(image.id) && "text-red-500",
-                                  )}
-                                >
-                                  <Heart className="w-4 h-4" />
-                                </Button>
-
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setPreviewImage(image);
-                                  }}
-                                >
-                                  <Eye className="w-4 h-4" />
-                                </Button>
-
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeImage(image.id);
-                                  }}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-
-                              {/* مربع التحديد */}
-                              <div className="absolute bottom-2 left-2">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedImages.has(image.id)}
-                                  onChange={(e) => {
-                                    const newSelected = new Set(selectedImages);
-                                    if (e.target.checked) {
-                                      newSelected.add(image.id);
-                                    } else {
-                                      newSelected.delete(image.id);
-                                    }
-                                    setSelectedImages(newSelected);
-                                  }}
-                                  className="w-4 h-4 text-knoux-600 rounded"
-                                />
-                              </div>
                             </div>
 
-                            {/* معلومات الصورة */}
-                            <div
-                              className={cn(
-                                "p-3",
-                                viewMode === "list" &&
-                                  "flex-1 flex flex-col justify-between",
-                              )}
-                            >
-                              <div>
-                                <h4
-                                  className="font-medium text-sm truncate mb-1"
-                                  title={image.name}
-                                >
-                                  {image.name}
-                                </h4>
-
-                                <div className="text-xs text-gray-500 space-y-1">
-                                  <div>
-                                    {(image.size / 1024 / 1024).toFixed(1)} MB
-                                  </div>
-
-                                  {image.analysis && (
-                                    <div className="space-y-1">
-                                      <div className="truncate">
-                                        {image.analysis.description}
-                                      </div>
-
-                                      <div className="flex items-center space-x-2">
-                                        {image.analysis.faces.length > 0 && (
-                                          <Badge
-                                            variant="outline"
-                                            className="text-xs"
-                                          >
-                                            <Users className="w-3 h-3 mr-1" />
-                                            {image.analysis.faces.length}
-                                          </Badge>
-                                        )}
-
-                                        {image.analysis.text.text.length >
-                                          10 && (
-                                          <Badge
-                                            variant="outline"
-                                            className="text-xs"
-                                          >
-                                            <FileText className="w-3 h-3" />
-                                          </Badge>
-                                        )}
-
-                                        <Badge
-                                          variant="outline"
-                                          className="text-xs"
-                                        >
-                                          {Math.round(
-                                            image.analysis.confidence * 100,
-                                          )}
-                                          %
-                                        </Badge>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
+                            {/* تصنيف الصورة */}
+                            {image.category && (
+                              <div className="absolute top-2 left-2">
+                                <Badge className="text-xs px-2 py-1">
+                                  {image.category}
+                                </Badge>
                               </div>
+                            )}
 
-                              {/* العلامات */}
-                              {image.tags.length > 0 && (
-                                <div className="mt-2 flex flex-wrap gap-1">
+                            {/* أدوات سريعة */}
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleFavorite(image.id);
+                                }}
+                                className={cn(
+                                  favorites.has(image.id) && "text-red-500",
+                                )}
+                              >
+                                <Heart className="w-4 h-4" />
+                              </Button>
+
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPreviewImage(image);
+                                }}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeImage(image.id);
+                                }}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+
+                            {/* مربع التحديد */}
+                            <div className="absolute bottom-2 left-2">
+                              <input
+                                type="checkbox"
+                                checked={selectedImages.has(image.id)}
+                                onChange={(e) => {
+                                  const newSelected = new Set(selectedImages);
+                                  if (e.target.checked) {
+                                    newSelected.add(image.id);
+                                  } else {
+                                    newSelected.delete(image.id);
+                                  }
+                                  setSelectedImages(newSelected);
+                                }}
+                                className="w-4 h-4 text-knoux-600 rounded"
+                              />
+                            </div>
+                          </div>
+
+                          {/* معلومات الصورة */}
+                          <div
+                            className={cn(
+                              "p-3",
+                              viewMode === "list" &&
+                                "flex-1 flex flex-col justify-between",
+                            )}
+                          >
+                            <div>
+                              <h4
+                                className="font-medium text-sm truncate mb-1"
+                                title={image.name}
+                              >
+                                {image.name}
+                              </h4>
+
+                              <div className="text-xs text-gray-500 space-y-1">
+                                <div>
+                                  {(image.size / 1024 / 1024).toFixed(1)} MB
+                                </div>
+
+                                {image.analysis && (
+                                  <div className="space-y-1">
+                                    <div className="truncate">
+                                      {image.analysis.description}
+                                    </div>
+
+                                    <div className="flex items-center space-x-2">
+                                      <span>دقة:</span>
+                                      <div className="flex-1 bg-gray-200 rounded-full h-1">
+                                        <div
+                                          className="bg-green-500 h-1 rounded-full"
+                                          style={{
+                                            width: `${image.analysis.confidence * 100}%`,
+                                          }}
+                                        />
+                                      </div>
+                                      <span>
+                                        {Math.round(
+                                          image.analysis.confidence * 100,
+                                        )}
+                                        %
+                                      </span>
+                                    </div>
+
+                                    {image.analysis.faces.length > 0 && (
+                                      <div className="flex items-center space-x-1">
+                                        <Users className="w-3 h-3" />
+                                        <span>
+                                          {image.analysis.faces.length} وجه
+                                        </span>
+                                      </div>
+                                    )}
+
+                                    {image.analysis.text.text && (
+                                      <div className="flex items-center space-x-1">
+                                        <FileText className="w-3 h-3" />
+                                        <span>نص مكتشف</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* العلامات */}
+                                <div className="flex flex-wrap gap-1 mt-2">
                                   {image.tags.slice(0, 3).map((tag) => (
                                     <Badge
                                       key={tag}
-                                      variant="secondary"
-                                      className="text-xs px-1 py-0"
+                                      variant="outline"
+                                      className="text-xs"
                                     >
                                       {tag}
                                     </Badge>
                                   ))}
                                   {image.tags.length > 3 && (
                                     <Badge
-                                      variant="secondary"
-                                      className="text-xs px-1 py-0"
+                                      variant="outline"
+                                      className="text-xs"
                                     >
                                       +{image.tags.length - 3}
                                     </Badge>
                                   )}
                                 </div>
-                              )}
+                              </div>
                             </div>
-                          </Card>
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
+
+                            {/* أيقونات الحالة */}
+                            <div className="flex items-center justify-between mt-2">
+                              <div className="flex space-x-1">
+                                {favorites.has(image.id) && (
+                                  <Heart className="w-3 h-3 text-red-500 fill-current" />
+                                )}
+                                {bookmarks.has(image.id) && (
+                                  <Bookmark className="w-3 h-3 text-blue-500 fill-current" />
+                                )}
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                {image.createdAt.toLocaleDateString("ar")}
+                              </div>
+                            </div>
+                          </div>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
-              ) : (
-                /* رسالة عدم وجود صور */
-                <Card className="text-center py-12">
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="w-24 h-24 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto">
-                        <Image className="w-12 h-12 text-gray-400" />
-                      </div>
-
-                      <div>
-                        <h3 className="text-lg font-medium mb-2">
-                          لا توجد صور للعرض
-                        </h3>
-                        <p className="text-gray-500 dark:text-gray-400 mb-4">
-                          {searchQuery
-                            ? `لم يتم العثور على صور تطابق "${searchQuery}"`
-                            : "ارفع بعض الصور للبدء في التنظيم الذكي"}
-                        </p>
-                      </div>
-
-                      <div className="flex justify-center space-x-4">
-                        {searchQuery && (
-                          <Button
-                            variant="outline"
-                            onClick={() => setSearchQuery("")}
-                          >
-                            <X className="w-4 h-4 mr-2" />
-                            مسح البحث
-                          </Button>
-                        )}
-
-                        {!showDemo && (
-                          <Button
-                            onClick={() => setShowDemo(true)}
-                            className="bg-gradient-knoux text-white"
-                          >
-                            <Eye className="w-4 h-4 mr-2" />
-                            عرض البيانات التجريبية
-                          </Button>
-                        )}
-                      </div>
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center h-64">
+                  <div className="text-center space-y-4">
+                    <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                      <ImageIcon className="w-8 h-8 text-gray-400" />
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* حالة نماذج الذكاء الاصطناعي */}
-              <AIModelsStatus
-                models={aiModels}
-                onDownloadModels={async () => {
-                  try {
-                    toast.info("🔄 بدء تحميل النماذج المتقدمة...");
-                    await aiEngine.downloadAndInstallModels();
-                    setAiModels(aiEngine.getModelStatus());
-                    toast.success("🎉 تم تحميل النماذج بنجاح!");
-                    confetti({
-                      particleCount: 100,
-                      spread: 70,
-                      origin: { y: 0.6 },
-                      colors: ["#6366f1", "#8b5cf6", "#06b6d4"],
-                    });
-                  } catch (error) {
-                    toast.error("❌ فشل تحميل النماذج");
-                  }
-                }}
-              />
-
-              {/* لوحة الإحصائيات المتقدمة */}
-              {showAdvanced && images.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <BarChart3 className="w-5 h-5" />
-                      <span>إحصائيات متقدمة</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ProcessingDashboard
-                      progress={progress}
-                      stats={stats}
-                      categoryStats={categoryStats}
-                      isProcessing={isProcessing}
-                    />
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                    <div>
+                      <h3 className="text-lg font-medium">لا توجد صور</h3>
+                      <p className="text-gray-500 text-sm mt-1">
+                        ارفع صور لبدء التنظيم الذكي بالذكاء الاصطناعي
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() =>
+                        document.getElementById("file-upload")?.click()
+                      }
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      إضافة صور
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
 
-      {/* معاينة الصورة المتطورة */}
+      {/* معاينة الصورة */}
       <AnimatePresence>
         {previewImage && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
             onClick={() => setPreviewImage(null)}
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
-              className="max-w-6xl max-h-[90vh] bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-2xl"
+              className="bg-white dark:bg-gray-900 rounded-lg overflow-hidden max-w-6xl max-h-[90vh] w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              {/* رأس المعاينة */}
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Image className="w-5 h-5 text-gray-500" />
-                  <div>
-                    <h3 className="font-medium">{previewImage.name}</h3>
-                    <p className="text-sm text-gray-500">
-                      {(previewImage.size / 1024 / 1024).toFixed(1)} MB
-                    </p>
-                  </div>
-                </div>
-
+              <div className="flex items-center justify-between p-4 border-b">
+                <h3 className="text-lg font-medium">{previewImage.name}</h3>
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="ghost"
@@ -1592,7 +1410,6 @@ export default function Index() {
                   >
                     <Heart className="w-4 h-4" />
                   </Button>
-
                   <Button
                     variant="ghost"
                     size="sm"
