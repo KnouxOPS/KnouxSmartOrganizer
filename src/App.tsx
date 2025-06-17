@@ -167,11 +167,32 @@ function App() {
             </Card>
 
             {/* النسخة المحلية */}
-            <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border-2 hover:border-purple-500">
+            <Card
+              className={cn(
+                "hover:shadow-lg transition-all duration-300 cursor-pointer border-2",
+                supportsFileSystemAPI && window.isSecureContext
+                  ? "hover:border-purple-500"
+                  : "border-red-200 bg-red-50",
+              )}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center mb-3">
-                  <div className="p-2 bg-purple-100 rounded-lg mr-3">
-                    <HardDrive className="w-6 h-6 text-purple-600" />
+                  <div
+                    className={cn(
+                      "p-2 rounded-lg mr-3",
+                      supportsFileSystemAPI && window.isSecureContext
+                        ? "bg-purple-100"
+                        : "bg-red-100",
+                    )}
+                  >
+                    <HardDrive
+                      className={cn(
+                        "w-6 h-6",
+                        supportsFileSystemAPI && window.isSecureContext
+                          ? "text-purple-600"
+                          : "text-red-600",
+                      )}
+                    />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold">النسخة المحلية</h3>
@@ -179,27 +200,54 @@ function App() {
                   </div>
                 </div>
 
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center text-xs">
-                    <Shield className="w-3 h-3 text-green-500 mr-1" />
-                    <span>100% محلي</span>
+                {supportsFileSystemAPI && window.isSecureContext ? (
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center text-xs">
+                      <Shield className="w-3 h-3 text-green-500 mr-1" />
+                      <span>100% محلي</span>
+                    </div>
+                    <div className="flex items-center text-xs">
+                      <Database className="w-3 h-3 text-green-500 mr-1" />
+                      <span>ملفات ضخمة</span>
+                    </div>
+                    <div className="flex items-center text-xs">
+                      <Cpu className="w-3 h-3 text-green-500 mr-1" />
+                      <span>تنظيم ذكي</span>
+                    </div>
                   </div>
-                  <div className="flex items-center text-xs">
-                    <Database className="w-3 h-3 text-green-500 mr-1" />
-                    <span>ملفات ضخمة</span>
+                ) : (
+                  <div className="space-y-2 mb-4">
+                    <div className="bg-red-100 border border-red-200 rounded p-2">
+                      <p className="text-xs text-red-700 font-medium">
+                        ⚠️ غير متاح
+                      </p>
+                      <p className="text-xs text-red-600">
+                        {!supportsFileSystemAPI
+                          ? "يتطلب Chrome/Edge حديث"
+                          : !window.isSecureContext
+                            ? "يتطلب HTTPS أو localhost"
+                            : "مشكلة في السياق الأمني"}
+                      </p>
+                    </div>
+                    <div className="text-xs text-green-600">
+                      💡 <strong>استخدم "النسخة العاملة" بدلاً من ذلك</strong>
+                    </div>
                   </div>
-                  <div className="flex items-center text-xs">
-                    <Cpu className="w-3 h-3 text-green-500 mr-1" />
-                    <span>تنظيم ذكي</span>
-                  </div>
-                </div>
+                )}
 
                 <Button
                   onClick={() => setAppMode("desktop")}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-sm"
-                  disabled={!supportsFileSystemAPI}
+                  className={cn(
+                    "w-full text-sm",
+                    supportsFileSystemAPI && window.isSecureContext
+                      ? "bg-purple-600 hover:bg-purple-700"
+                      : "bg-gray-400 cursor-not-allowed",
+                  )}
+                  disabled={!supportsFileSystemAPI || !window.isSecureContext}
                 >
-                  {supportsFileSystemAPI ? "ابدأ المحلية" : "غير مدعوم"}
+                  {supportsFileSystemAPI && window.isSecureContext
+                    ? "ابدأ المحلية"
+                    : "غير متاح - استخدم العاملة"}
                 </Button>
               </CardContent>
             </Card>
