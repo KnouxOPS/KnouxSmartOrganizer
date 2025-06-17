@@ -21,6 +21,7 @@ import type { AIModel } from "@/types/organizer";
 interface AIModelsStatusProps {
   models: AIModel[];
   onReloadModel?: (modelName: string) => void;
+  onDownloadModels?: () => Promise<void>;
   className?: string;
 }
 
@@ -41,8 +42,23 @@ const modelTypeColors: Record<AIModel["type"], string> = {
 export function AIModelsStatus({
   models,
   onReloadModel,
+  onDownloadModels,
   className,
 }: AIModelsStatusProps) {
+  const [isDownloading, setIsDownloading] = React.useState(false);
+
+  const handleDownloadModels = async () => {
+    if (!onDownloadModels || isDownloading) return;
+
+    setIsDownloading(true);
+    try {
+      await onDownloadModels();
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
   const loadedModels = models.filter((m) => m.loaded);
   const loadingModels = models.filter((m) => m.loading);
   const errorModels = models.filter((m) => m.error);
@@ -90,9 +106,31 @@ export function AIModelsStatus({
             <Brain className="w-5 h-5 text-knoux-600" />
             <span>AI Engine Status</span>
           </div>
-          <Badge className={getStatusColor(status)}>
-            {getStatusMessage(status)}
-          </Badge>
+          <div className="flex items-center space-x-2">
+            <Badge className={getStatusColor(status)}>
+              {getStatusMessage(status)}
+            </Badge>
+            {onDownloadModels && (
+              <Button
+                onClick={handleDownloadModels}
+                disabled={isDownloading}
+                size="sm"
+                className="bg-knoux-600 hover:bg-knoux-700 text-white"
+              >
+                {isDownloading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    تحميل...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    تحميل النماذج
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">

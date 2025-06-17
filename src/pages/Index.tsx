@@ -80,6 +80,17 @@ export default function Index() {
       }
     };
     initializeAI();
+
+    // Update model status every 2 seconds during downloads
+    const interval = setInterval(() => {
+      const currentModels = aiEngine.getModelStatus();
+      const hasLoadingModels = currentModels.some((m) => m.loading);
+      if (hasLoadingModels) {
+        setAiModels([...currentModels]);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleSmartOrganize = async () => {
@@ -275,7 +286,13 @@ export default function Index() {
               </Card>
 
               {/* AI Models Status */}
-              <AIModelsStatus models={aiModels} />
+              <AIModelsStatus
+                models={aiModels}
+                onDownloadModels={async () => {
+                  await aiEngine.downloadAndInstallModels();
+                  setAiModels(aiEngine.getModelStatus());
+                }}
+              />
 
               {/* Quick Actions */}
               {images.length > 0 && (
