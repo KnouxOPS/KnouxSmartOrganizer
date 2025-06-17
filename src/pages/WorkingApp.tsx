@@ -93,6 +93,10 @@ export default function WorkingApp() {
   const [autoProcess, setAutoProcess] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState("date");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [minConfidence, setMinConfidence] = useState([50]);
+  const [showProcessedOnly, setShowProcessedOnly] = useState(false);
   const [theme, setTheme] = useState("light");
   const [dragActive, setDragActive] = useState(false);
 
@@ -425,18 +429,70 @@ export default function WorkingApp() {
     [handleFileUpload],
   );
 
-  // فلترة الصور
-  const filteredImages = images.filter((img) => {
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      return (
-        img.name.toLowerCase().includes(query) ||
-        img.tags.some((tag) => tag.toLowerCase().includes(query)) ||
-        img.analysis?.description.toLowerCase().includes(query)
-      );
-    }
-    return true;
-  });
+  // فلترة وترتيب الصور المتقدم
+  const filteredAndSortedImages = React.useMemo(() => {
+    let filtered = images.filter((img) => {
+      // فلترة البحث
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        const matches =
+          img.name.toLowerCase().includes(query) ||
+          img.tags.some((tag) => tag.toLowerCase().includes(query)) ||
+          img.analysis?.description.toLowerCase().includes(query);
+        if (!matches) return false;
+      }
+
+      // فلترة التصنيف
+      if (filterCategory !== "all") {
+        if (img.category !== filterCategory) return false;
+      }
+
+      // فلترة المعالجة
+      if (showProcessedOnly && !img.processed) return false;
+
+      // فلترة الثقة
+      if (img.analysis) {
+        const confidence = img.analysis.confidence * 100;
+        if (confidence < minConfidence[0]) return false;
+      }
+
+      return true;
+    });
+
+    // ترتيب النتائج
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name, "ar");
+        case "size":
+          return b.size - a.size;
+        case "confidence":
+          const confA = a.analysis?.confidence || 0;
+          const confB = b.analysis?.confidence || 0;
+          return confB - confA;
+        case "category":
+          const catA = a.category || "zzz";
+          const catB = b.category || "zzz";
+          return catA.localeCompare(catB, "ar");
+        case "faces":
+          const facesA = a.analysis?.faces.length || 0;
+          const facesB = b.analysis?.faces.length || 0;
+          return facesB - facesA;
+        case "date":
+        default:
+          return b.createdAt.getTime() - a.createdAt.getTime();
+      }
+    });
+
+    return filtered;
+  }, [
+    images,
+    searchQuery,
+    filterCategory,
+    showProcessedOnly,
+    minConfidence,
+    sortBy,
+  ]);
 
   // إحصائيات
   const stats = {
@@ -608,7 +664,7 @@ export default function WorkingApp() {
                     disabled={isProcessing}
                   >
                     <FolderOpen className="w-6 h-6 mb-1" />
-                    <span className="text-xs">مجلد</span>
+                    <span className="text-xs">مج��د</span>
                   </Button>
                 </div>
 
@@ -700,6 +756,14 @@ export default function WorkingApp() {
                   <Label>معالجة تلقائية</Label>
                 </div>
 
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={showProcessedOnly}
+                    onCheckedChange={setShowProcessedOnly}
+                  />
+                  <Label>المعالجة فقط</Label>
+                </div>
+
                 <div>
                   <Label>طريقة العرض</Label>
                   <Select value={viewMode} onValueChange={setViewMode}>
@@ -711,6 +775,56 @@ export default function WorkingApp() {
                       <SelectItem value="list">قائمة</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label>ترتيب حسب</Label>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="date">التاريخ</SelectItem>
+                      <SelectItem value="name">الاسم</SelectItem>
+                      <SelectItem value="size">الحجم</SelectItem>
+                      <SelectItem value="confidence">دقة التحليل</SelectItem>
+                      <SelectItem value="category">التصنيف</SelectItem>
+                      <SelectItem value="faces">عدد الوجوه</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>تصنيف الصور</Label>
+                  <Select
+                    value={filterCategory}
+                    onValueChange={setFilterCategory}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">جميع الصور</SelectItem>
+                      <SelectItem value="selfies">صور شخصية</SelectItem>
+                      <SelectItem value="nature">طبيعة</SelectItem>
+                      <SelectItem value="food">طعام</SelectItem>
+                      <SelectItem value="documents">وثائق</SelectItem>
+                      <SelectItem value="screenshots">لقطات شاشة</SelectItem>
+                      <SelectItem value="other">أخرى</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>الحد الأدنى للثقة: {minConfidence[0]}%</Label>
+                  <Slider
+                    value={minConfidence}
+                    onValueChange={setMinConfidence}
+                    max={100}
+                    min={0}
+                    step={5}
+                    className="mt-2"
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -865,41 +979,69 @@ export default function WorkingApp() {
               </Card>
             </div>
 
-            {/* البحث */}
+            {/* البحث والفلترة */}
             <Card>
               <CardContent className="pt-6">
-                <div className="flex items-center space-x-4">
-                  <div className="flex-1 relative">
-                    <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                    <Input
-                      placeholder="البحث في الصور..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
-                    />
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                      <Input
+                        placeholder="البحث في الصور، العلامات، الأوصاف..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant={viewMode === "grid" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setViewMode("grid")}
+                      >
+                        <Grid3X3 className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant={viewMode === "list" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setViewMode("list")}
+                      >
+                        <List className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant={viewMode === "grid" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setViewMode("grid")}
-                    >
-                      <Grid3X3 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant={viewMode === "list" ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setViewMode("list")}
-                    >
-                      <List className="w-4 h-4" />
-                    </Button>
+
+                  {/* معلومات النتائج */}
+                  <div className="flex items-center justify-between text-sm text-gray-600">
+                    <span>
+                      عرض {filteredAndSortedImages.length} من {images.length}{" "}
+                      صورة
+                      {filterCategory !== "all" && ` • ${filterCategory}`}
+                      {searchQuery && ` • البحث: "${searchQuery}"`}
+                    </span>
+                    <span>
+                      مرتب حسب:{" "}
+                      {sortBy === "date"
+                        ? "التاريخ"
+                        : sortBy === "name"
+                          ? "الاسم"
+                          : sortBy === "size"
+                            ? "الحجم"
+                            : sortBy === "confidence"
+                              ? "الدقة"
+                              : sortBy === "category"
+                                ? "التصنيف"
+                                : sortBy === "faces"
+                                  ? "الوجوه"
+                                  : sortBy}
+                    </span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* عرض الصور */}
-            {filteredImages.length > 0 ? (
+            {filteredAndSortedImages.length > 0 ? (
               <div
                 className={cn(
                   "grid gap-4",
@@ -909,7 +1051,7 @@ export default function WorkingApp() {
                 )}
               >
                 <AnimatePresence>
-                  {filteredImages.map((image, index) => (
+                  {filteredAndSortedImages.map((image, index) => (
                     <motion.div
                       key={image.id}
                       initial={{ opacity: 0, scale: 0.8 }}
@@ -1002,7 +1144,7 @@ export default function WorkingApp() {
                     <div>
                       <h3 className="text-lg font-medium">ابدأ بإضافة صورك</h3>
                       <p className="text-gray-500 text-sm mt-1">
-                        انقر أو اسحب الصو�� للبدء
+                        انقر أو اسحب الصور للبدء
                       </p>
                     </div>
                     <div className="flex space-x-4">
