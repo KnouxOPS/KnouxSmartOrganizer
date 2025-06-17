@@ -1,0 +1,70 @@
+{
+  "name": "knoux-smartorganizer-pro",
+  "version": "1.0.0",
+  "description": "AI-Powered Desktop Photo Organizer",
+  "main": "main.js",
+  "homepage": ".",
+  "scripts": {
+    "start": "electron .",
+    "dev": "concurrently \"npm run react-dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "react-dev": "cd ui && npm start",
+    "react-build": "cd ui && npm run build",
+    "build": "npm run react-build && electron-builder",
+    "build-win": "npm run react-build && electron-builder --win",
+    "build-mac": "npm run react-build && electron-builder --mac",
+    "postinstall": "cd ui && npm install"
+  },
+  "keywords": [
+    "ai",
+    "photo-organizer",
+    "electron",
+    "desktop",
+    "knoux"
+  ],
+  "author": "Knoux Technologies",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.6.0",
+    "electron": "^22.0.0",
+    "electron-builder": "^24.0.0",
+    "wait-on": "^7.0.1"
+  },
+  "dependencies": {
+    "@tensorflow/tfjs-node": "^4.10.0",
+    "@vladmandic/face-api": "^1.7.13",
+    "tesseract.js": "^4.1.1",
+    "nsfwjs": "^2.4.2",
+    "sharp": "^0.32.6",
+    "fs-extra": "^11.1.1",
+    "chokidar": "^3.5.3",
+    "blockhash-core": "^1.2.0",
+    "winston": "^3.8.2",
+    "electron-store": "^8.1.0"
+  },
+  "build": {
+    "appId": "com.knoux.smartorganizer",
+    "productName": "Knoux SmartOrganizer PRO",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "ai-engine.js",
+      "ui/build/**/*",
+      "models/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
