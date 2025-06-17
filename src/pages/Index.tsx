@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
@@ -66,7 +66,7 @@ export default function Index() {
   const [aiModels, setAiModels] = useState<any[]>([]);
 
   // Initialize AI models on component mount
-  React.useEffect(() => {
+  useEffect(() => {
     const initializeAI = async () => {
       // Wait a bit for AI engine to initialize
       setTimeout(() => {
