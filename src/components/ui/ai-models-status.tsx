@@ -177,9 +177,21 @@ export function AIModelsStatus({
 
               <div className="flex items-center space-x-2">
                 {model.loading && (
-                  <div className="flex items-center space-x-1 text-blue-600">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-xs">Loading...</span>
+                  <div className="flex flex-col items-end space-y-1">
+                    <div className="flex items-center space-x-1 text-blue-600">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span className="text-xs">
+                        {model.progress ? `${model.progress}%` : "تحميل..."}
+                      </span>
+                    </div>
+                    {model.progress !== undefined && (
+                      <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500 transition-all duration-300"
+                          style={{ width: `${model.progress}%` }}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
 

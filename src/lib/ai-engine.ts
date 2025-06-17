@@ -147,6 +147,16 @@ export class AIEngine {
     this.modelStatus.set(key, status);
   }
 
+  public updateModelProgress(key: string, progress: number) {
+    const currentStatus = this.modelStatus.get(key);
+    if (currentStatus) {
+      this.updateModelStatus(key, {
+        ...currentStatus,
+        progress,
+      });
+    }
+  }
+
   public getModelStatus(): AIModel[] {
     return Array.from(this.modelStatus.values());
   }
@@ -210,7 +220,7 @@ export class AIEngine {
       console.log("📥 Downloading Face-API models...");
 
       // Simulate download progress
-      await this.simulateDownload(2000);
+      await this.simulateDownloadWithProgress(2000, "face-detection");
 
       // Try to load from CDN
       const MODEL_URL =
@@ -251,7 +261,7 @@ export class AIEngine {
     try {
       console.log("📥 Downloading OCR models...");
 
-      await this.simulateDownload(3000);
+      await this.simulateDownloadWithProgress(3000, "ocr");
 
       // Pre-initialize Tesseract with full language support
       const worker = await Tesseract.createWorker();
@@ -286,7 +296,7 @@ export class AIEngine {
     try {
       console.log("📥 Downloading Classification models...");
 
-      await this.simulateDownload(2500);
+      await this.simulateDownloadWithProgress(2500, "classification");
 
       // Try to load MobileNet from TensorFlow Hub
       const model = await tf.loadLayersModel(
@@ -321,7 +331,7 @@ export class AIEngine {
     try {
       console.log("📥 Downloading Content Safety models...");
 
-      await this.simulateDownload(1500);
+      await this.simulateDownloadWithProgress(1500, "nsfw");
 
       // For demo purposes, we'll simulate successful download
       this.updateModelStatus("nsfw", {
@@ -344,6 +354,26 @@ export class AIEngine {
         size: "Built-in",
       });
     }
+  }
+
+  private async simulateDownloadWithProgress(
+    duration: number,
+    modelKey: string,
+  ): Promise<void> {
+    return new Promise((resolve) => {
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress >= 100) {
+          progress = 100;
+          this.updateModelProgress(modelKey, progress);
+          clearInterval(interval);
+          setTimeout(resolve, 100);
+        } else {
+          this.updateModelProgress(modelKey, Math.floor(progress));
+        }
+      }, duration / 20);
+    });
   }
 
   private async simulateDownload(duration: number): Promise<void> {

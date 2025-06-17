@@ -137,6 +137,7 @@ export interface AIModel {
   error?: string;
   version: string;
   size: string;
+  progress?: number; // 0-100
 }
 
 export interface ProcessingProgress {
