@@ -21,6 +21,7 @@ import {
   Shuffle,
   Copy,
   Loader2,
+  FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -278,20 +279,95 @@ export default function Index() {
                 </motion.div>
               )}
 
-              {/* Upload Section */}
-              <Card>
-                <CardContent className="p-6">
-                  <ImageDropzone
-                    onDrop={addImages}
-                    disabled={isProcessing}
-                    maxFiles={500}
-                    onFolderSelect={(files) => {
-                      toast.success(
-                        `📁 تم تحديد ${files.length} صورة من المجلد`,
-                      );
-                      addImages(files);
-                    }}
-                  />
+              {/* Local Folder Selection */}
+              <Card className="border-2 border-orange-200 bg-gradient-to-r from-orange-50 to-yellow-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-3">
+                    <div className="p-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-lg">
+                      <FolderOpen className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-orange-800">
+                        تحديد مجلد الصور المحلي
+                      </h3>
+                      <p className="text-sm text-orange-600">
+                        اختر مجلد من جهازك لتنظيمه بالذكاء الاصطناعي
+                      </p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const { fileSystemManager } = await import(
+                            "@/lib/file-system"
+                          );
+                          if (!fileSystemManager.isSupported()) {
+                            toast.error(
+                              "❌ متصفحك لا يدعم الوصول للملفات المحلية",
+                              {
+                                description: "استخدم Chrome أو Edge الحديث",
+                              },
+                            );
+                            return;
+                          }
+
+                          const result =
+                            await fileSystemManager.selectDirectory();
+                          toast.success(
+                            `📁 تم تحديد ${result.files.length} صورة من المجلد: ${result.path}`,
+                          );
+                          await addImages(result.files);
+                        } catch (error) {
+                          toast.error("❌ فشل في الوصول للمجلد", {
+                            description: error.message,
+                          });
+                        }
+                      }}
+                      disabled={isProcessing}
+                      className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold text-lg py-6 px-8"
+                      size="lg"
+                    >
+                      <FolderOpen className="w-6 h-6 mr-3" />
+                      📂 اختر مجلد من جهازك
+                    </Button>
+
+                    <Button
+                      onClick={() => {
+                        const input = document.createElement("input");
+                        input.type = "file";
+                        input.multiple = true;
+                        input.accept = "image/*";
+                        input.onchange = (e) => {
+                          const files = Array.from(
+                            (e.target as HTMLInputElement).files || [],
+                          );
+                          if (files.length > 0) {
+                            toast.success(`📸 تم اختيار ${files.length} صورة`);
+                            addImages(files);
+                          }
+                        };
+                        input.click();
+                      }}
+                      disabled={isProcessing}
+                      variant="outline"
+                      className="border-orange-300 text-orange-700 hover:bg-orange-50 py-6 px-8"
+                      size="lg"
+                    >
+                      <Upload className="w-5 h-5 mr-2" />
+                      أو اختر ملفات منفردة
+                    </Button>
+                  </div>
+
+                  {images.length > 0 && (
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <p className="text-green-800 font-medium">
+                        ✅ تم تحميل {images.length} صورة - جاهز للتنظيم!
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -356,27 +432,146 @@ export default function Index() {
 
                   {/* Main AI Action Buttons */}
                   {images.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <Button
-                        onClick={handleSmartOrganize}
+                        onClick={async () => {
+                          try {
+                            toast.info("🤖 بدء التحليل الذكي...");
+                            const { autoModelManager } = await import(
+                              "@/lib/auto-models"
+                            );
+                            await autoModelManager.ensureModelsLoaded();
+                            await handleSmartOrganize();
+                          } catch (error) {
+                            toast.error("❌ فشل في التحليل", {
+                              description: error.message,
+                            });
+                          }
+                        }}
                         disabled={isProcessing || unprocessedCount === 0}
-                        className="h-24 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white flex flex-col items-center justify-center p-4"
+                        className="h-32 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white flex flex-col items-center justify-center p-4"
                         size="lg"
                       >
                         {isProcessing ? (
                           <>
-                            <Loader2 className="w-8 h-8 mb-2 animate-spin" />
+                            <Loader2 className="w-10 h-10 mb-2 animate-spin" />
                             <span className="text-sm">جاري التحليل...</span>
                           </>
                         ) : (
                           <>
-                            <Brain className="w-8 h-8 mb-2" />
-                            <span className="font-semibold">تشغيل الـ AI</span>
-                            <span className="text-xs opacity-90">
-                              ({unprocessedCount} صورة)
+                            <Brain className="w-10 h-10 mb-2" />
+                            <span className="font-bold text-lg">
+                              🧠 تشغيل الـ AI
+                            </span>
+                            <span className="text-sm opacity-90">
+                              تحليل شامل ({unprocessedCount} صورة)
                             </span>
                           </>
                         )}
+                      </Button>
+
+                      <Button
+                        onClick={async () => {
+                          try {
+                            toast.info("📁 إنشاء مجلدات منظمة...");
+                            const { fileSystemManager } = await import(
+                              "@/lib/file-system"
+                            );
+
+                            if (!fileSystemManager.hasSelectedDirectory()) {
+                              toast.error("❌ يجب اختيار مجلد أولاً");
+                              return;
+                            }
+
+                            const success =
+                              await fileSystemManager.createOrganizedFolders();
+                            if (success) {
+                              toast.success("✅ تم إنشاء المجلدات المنظمة!", {
+                                description: "يمكنك الآن نقل الصور حسب التصنيف",
+                              });
+                            } else {
+                              toast.error("❌ فشل في إنشاء المجلدات");
+                            }
+                          } catch (error) {
+                            toast.error("❌ خطأ في إنشاء المجلدات", {
+                              description: error.message,
+                            });
+                          }
+                        }}
+                        className="h-32 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white flex flex-col items-center justify-center p-4"
+                        size="lg"
+                      >
+                        <FolderOpen className="w-10 h-10 mb-2" />
+                        <span className="font-bold text-lg">
+                          📁 إنشاء مجلدات
+                        </span>
+                        <span className="text-sm opacity-90">
+                          تنظيم تلقائي للمجلد
+                        </span>
+                      </Button>
+
+                      <Button
+                        onClick={() => {
+                          const categorized = images.filter(
+                            (img) => img.category,
+                          );
+                          const categories = [
+                            ...new Set(categorized.map((img) => img.category)),
+                          ];
+
+                          if (categories.length === 0) {
+                            toast.info("ℹ️ قم بتشغيل AI أولاً لتصنيف الصور");
+                            return;
+                          }
+
+                          toast.success(`📊 تقرير التصنيف`, {
+                            description: `تم تصنيف ${categorized.length} صورة إلى ${categories.length} فئة`,
+                          });
+
+                          // Show detailed breakdown
+                          categories.forEach((category) => {
+                            const count = categorized.filter(
+                              (img) => img.category === category,
+                            ).length;
+                            console.log(`${category}: ${count} صورة`);
+                          });
+                        }}
+                        className="h-32 bg-gradient-to-br from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white flex flex-col items-center justify-center p-4"
+                        size="lg"
+                      >
+                        <BarChart3 className="w-10 h-10 mb-2" />
+                        <span className="font-bold text-lg">
+                          📊 تقرير التصنيف
+                        </span>
+                        <span className="text-sm opacity-90">
+                          إحصائيات مفصلة
+                        </span>
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Quick Organization Actions */}
+                  {images.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4 border-t border-gray-200">
+                      <Button
+                        onClick={async () => {
+                          const selfies = images.filter(
+                            (img) =>
+                              img.analysis?.faces &&
+                              img.analysis.faces.length > 0,
+                          );
+                          toast.success(
+                            `👤 وجدت ${selfies.length} صورة شخصية`,
+                            {
+                              description: "جاهزة للنقل لمجلد الصور الشخصية",
+                            },
+                          );
+                        }}
+                        variant="outline"
+                        className="border-purple-300 text-purple-700 hover:bg-purple-50"
+                      >
+                        <Users className="w-4 h-4 mr-2" />
+                        صور شخصية
                       </Button>
 
                       <Button
