@@ -77,91 +77,7 @@ interface ProcessingStep {
   progress: number;
 }
 
-// محرك ذكاء اصطناعي مبسط يعمل بالفعل
-class SimpleAIEngine {
-  async analyzeImage(file: File): Promise<any> {
-    // محاكاة تحليل حقيقي مع تأخير
-    await this.delay(Math.random() * 1000 + 500);
-
-    const filename = file.name.toLowerCase();
-
-    // تحليل ذكي بناءً على اسم الملف
-    let description = "صورة رقمية عالية الجودة";
-    let category = "other";
-    let faces: any[] = [];
-    let tags: string[] = [];
-
-    if (
-      filename.includes("selfie") ||
-      filename.includes("portrait") ||
-      filename.includes("face")
-    ) {
-      description = "صورة شخصية جميلة وواضحة";
-      category = "selfies";
-      faces = [{ confidence: 0.92, age: 28, gender: "unknown" }];
-      tags = ["صورة شخصية", "بورتريه"];
-    } else if (
-      filename.includes("food") ||
-      filename.includes("pizza") ||
-      filename.includes("meal")
-    ) {
-      description = "صورة طعام شهي ولذيذ";
-      category = "food";
-      tags = ["طعام", "وجبة"];
-    } else if (
-      filename.includes("nature") ||
-      filename.includes("landscape") ||
-      filename.includes("sunset")
-    ) {
-      description = "منظر طبيعي خلاب وجميل";
-      category = "nature";
-      tags = ["طبيعة", "منظر"];
-    } else if (
-      filename.includes("document") ||
-      filename.includes("text") ||
-      filename.includes("scan")
-    ) {
-      description = "��ثيقة أو مستند مهم";
-      category = "documents";
-      tags = ["وثيقة", "مستند"];
-    } else if (filename.includes("screenshot") || filename.includes("screen")) {
-      description = "لقطة شاشة لتطبيق أو موقع";
-      category = "screenshots";
-      tags = ["لقطة شاشة"];
-    }
-
-    return {
-      description,
-      confidence: 0.85 + Math.random() * 0.15,
-      faces,
-      text: {
-        text: filename.includes("document") ? "نص مستخرج من الوثيقة" : "",
-        confidence: 0.8,
-      },
-      isNSFW: false,
-      nsfwScore: 0.02,
-      dominantColors: this.generateColors(),
-      category,
-      tags,
-    };
-  }
-
-  private generateColors(): string[] {
-    const colorSets = [
-      ["#FF6B35", "#F7931E", "#FFD23F", "#4A90E2"],
-      ["#E74C3C", "#3498DB", "#2ECC71", "#F39C12"],
-      ["#9B59B6", "#1ABC9C", "#E67E22", "#34495E"],
-      ["#FF69B4", "#00CED1", "#FFD700", "#32CD32"],
-    ];
-    return colorSets[Math.floor(Math.random() * colorSets.length)];
-  }
-
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-}
-
-const aiEngine = new SimpleAIEngine();
+import { realAIEngine } from "@/lib/real-ai-engine";
 
 export default function WorkingApp() {
   // حالات التطبيق
@@ -367,8 +283,8 @@ export default function WorkingApp() {
           const image = targetImages[i];
           setCurrentFile(image.name);
 
-          // تحليل الذكاء الاصطناعي
-          const analysis = await aiEngine.analyzeImage(image.file);
+          // تحليل الذكاء الاصطناعي الحقيقي
+          const analysis = await realAIEngine.analyzeImage(image.file);
 
           // تحديث الصورة
           setImages((prev) =>
@@ -1086,7 +1002,7 @@ export default function WorkingApp() {
                     <div>
                       <h3 className="text-lg font-medium">ابدأ بإضافة صورك</h3>
                       <p className="text-gray-500 text-sm mt-1">
-                        انقر أو اسحب الصور للبدء
+                        انقر أو اسحب الصو�� للبدء
                       </p>
                     </div>
                     <div className="flex space-x-4">
