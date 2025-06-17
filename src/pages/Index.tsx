@@ -19,6 +19,8 @@ import {
   Cpu,
   Target,
   Shuffle,
+  Copy,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -286,149 +288,206 @@ export default function Index() {
                 </CardContent>
               </Card>
 
-              {/* AI Models Status */}
-              <AIModelsStatus
-                models={aiModels}
-                onDownloadModels={async () => {
-                  try {
-                    toast.info("🔄 بدء تحميل النماذج...", {
-                      description:
-                        "سيتم تحميل جميع نماذج الذكاء الاصطناعي المتقدمة",
-                    });
+              {/* AI Control Panel */}
+              <Card className="border-2 border-knoux-200 bg-gradient-to-r from-knoux-50 to-purple-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-3">
+                    <div className="p-2 bg-gradient-knoux rounded-lg">
+                      <Cpu className="w-6 h-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold knoux-text-gradient">
+                        مركز التحكم بالذكاء الاصطناعي
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        تفعيل وإدارة نماذج الـ AI لتنظيم الصور
+                      </p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* AI Models Status */}
+                  <AIModelsStatus
+                    models={aiModels}
+                    onDownloadModels={async () => {
+                      try {
+                        toast.info("🔄 بدء تحميل النماذج...", {
+                          description:
+                            "سيتم تحميل جميع نماذج الذكاء الاصطناعي المتقدمة",
+                        });
 
-                    await aiEngine.downloadAndInstallModels();
-                    setAiModels(aiEngine.getModelStatus());
+                        await aiEngine.downloadAndInstallModels();
+                        setAiModels(aiEngine.getModelStatus());
 
-                    toast.success("🎉 تم تحميل النماذج بنجاح!", {
-                      description:
-                        "التطبيق جاهز الآن مع أقوى إمكانيات الذكاء الاصطناعي",
-                    });
+                        toast.success("🎉 تم تحميل النماذج بنجاح!", {
+                          description:
+                            "التطبيق جاهز الآن مع أقوى إمكانيات الذكاء الاصطناعي",
+                        });
 
-                    // Celebrate with confetti
-                    confetti({
-                      particleCount: 100,
-                      spread: 70,
-                      origin: { y: 0.6 },
-                      colors: ["#6366f1", "#8b5cf6", "#06b6d4"],
-                    });
-                  } catch (error) {
-                    toast.error("❌ فشل تحميل النماذج", {
-                      description: "سيعمل التطبيق بالنماذج الاحتياطية",
-                    });
-                  }
-                }}
-              />
+                        // Celebrate with confetti
+                        confetti({
+                          particleCount: 100,
+                          spread: 70,
+                          origin: { y: 0.6 },
+                          colors: ["#6366f1", "#8b5cf6", "#06b6d4"],
+                        });
+                      } catch (error) {
+                        toast.error("❌ فشل تحميل النماذج", {
+                          description: "سيعمل التطبيق بالنماذج الاحتياطية",
+                        });
+                      }
+                    }}
+                  />
 
-              {/* Quick Actions */}
-              {images.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Cpu className="w-5 h-5" />
-                      <span>Smart Actions</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-wrap gap-3">
+                  {/* Main AI Action Buttons */}
+                  {images.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       <Button
                         onClick={handleSmartOrganize}
                         disabled={isProcessing || unprocessedCount === 0}
-                        className={cn(
-                          "bg-gradient-knoux text-white font-semibold px-6 py-3 rounded-xl",
-                          !isProcessing &&
-                            unprocessedCount > 0 &&
-                            "smart-organize-btn",
-                        )}
+                        className="h-24 bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white flex flex-col items-center justify-center p-4"
                         size="lg"
                       >
                         {isProcessing ? (
                           <>
-                            <Pause className="w-5 h-5 mr-2" />
-                            Processing... ({progress.current}/{progress.total})
+                            <Loader2 className="w-8 h-8 mb-2 animate-spin" />
+                            <span className="text-sm">جاري التحليل...</span>
                           </>
                         ) : (
                           <>
-                            <Play className="w-5 h-5 mr-2" />
-                            Smart Organize ({unprocessedCount} images)
+                            <Brain className="w-8 h-8 mb-2" />
+                            <span className="font-semibold">تشغيل الـ AI</span>
+                            <span className="text-xs opacity-90">
+                              ({unprocessedCount} صورة)
+                            </span>
                           </>
                         )}
                       </Button>
 
-                      {isProcessing && (
-                        <Button
-                          onClick={stopProcessing}
-                          variant="outline"
-                          className="border-red-300 text-red-700 hover:bg-red-50"
-                        >
-                          <Pause className="w-4 h-4 mr-2" />
-                          Stop Processing
-                        </Button>
-                      )}
+                      <Button
+                        onClick={() => {
+                          // Face detection action
+                          const faceImages = images.filter(
+                            (img) =>
+                              img.analysis?.faces &&
+                              img.analysis.faces.length > 0,
+                          );
+                          toast.success(
+                            `🧍 تم العثور على ${faceImages.length} صورة تحتوي على وجوه`,
+                          );
+                        }}
+                        className="h-24 bg-gradient-to-br from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white flex flex-col items-center justify-center p-4"
+                        size="lg"
+                      >
+                        <Users className="w-8 h-8 mb-2" />
+                        <span className="font-semibold">كشف الوجوه</span>
+                        <span className="text-xs opacity-90">
+                          تحديد الصور الشخصية
+                        </span>
+                      </Button>
 
-                      {processedCount > 0 && (
-                        <Button
-                          onClick={exportResults}
-                          variant="outline"
-                          className="border-green-300 text-green-700 hover:bg-green-50"
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Export Results
-                        </Button>
-                      )}
+                      <Button
+                        onClick={() => {
+                          // Text extraction action
+                          const textImages = images.filter(
+                            (img) =>
+                              img.analysis?.text &&
+                              img.analysis.text.text.length > 10,
+                          );
+                          toast.success(
+                            `📄 تم العثور على ${textImages.length} صورة تحتوي على نص`,
+                          );
+                        }}
+                        className="h-24 bg-gradient-to-br from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white flex flex-col items-center justify-center p-4"
+                        size="lg"
+                      >
+                        <FileText className="w-8 h-8 mb-2" />
+                        <span className="font-semibold">استخراج النص</span>
+                        <span className="text-xs opacity-90">قراءة النصوص</span>
+                      </Button>
 
-                      {images.length > 0 && (
-                        <Button
-                          onClick={clearAll}
-                          variant="outline"
-                          className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                        >
-                          <RotateCcw className="w-4 h-4 mr-2" />
-                          Clear All
-                        </Button>
-                      )}
+                      <Button
+                        onClick={() => {
+                          // Categorization action
+                          const categories = [
+                            ...new Set(
+                              images.map((img) => img.category).filter(Boolean),
+                            ),
+                          ];
+                          toast.success(
+                            `📂 تم تصنيف الصور إلى ${categories.length} فئة`,
+                          );
+                        }}
+                        className="h-24 bg-gradient-to-br from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white flex flex-col items-center justify-center p-4"
+                        size="lg"
+                      >
+                        <Target className="w-8 h-8 mb-2" />
+                        <span className="font-semibold">تصنيف ذكي</span>
+                        <span className="text-xs opacity-90">
+                          ترتيب حسب المحتوى
+                        </span>
+                      </Button>
                     </div>
+                  )}
 
-                    {/* Processing Options */}
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                      <h4 className="font-medium mb-3 flex items-center">
-                        <Settings className="w-4 h-4 mr-2" />
-                        Processing Options
-                      </h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {[
-                          { key: "autoRename", label: "Auto Rename" },
-                          { key: "detectFaces", label: "Detect Faces" },
-                          { key: "extractText", label: "Extract Text" },
-                          { key: "findDuplicates", label: "Find Duplicates" },
-                        ].map(({ key, label }) => (
-                          <div
-                            key={key}
-                            className="flex items-center space-x-2"
-                          >
-                            <Switch
-                              id={key}
-                              checked={
-                                organizeOptions[
-                                  key as keyof typeof organizeOptions
-                                ] as boolean
-                              }
-                              onCheckedChange={(checked) =>
-                                setOrganizeOptions({
-                                  ...organizeOptions,
-                                  [key]: checked,
-                                })
-                              }
-                            />
-                            <Label htmlFor={key} className="text-sm">
-                              {label}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
+                  {/* Quick Actions Row */}
+                  {images.length > 0 && (
+                    <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+                      <Button
+                        onClick={() => {
+                          const duplicates = aiEngine.findSimilarImages(
+                            images
+                              .filter((img) => img.analysis)
+                              .map((img) => ({
+                                id: img.id,
+                                analysis: img.analysis!,
+                              })),
+                          );
+                          toast.info(
+                            `🔍 تم العثور على ${duplicates.length} مجموعة صور متشابهة`,
+                          );
+                        }}
+                        variant="outline"
+                        size="sm"
+                        className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                      >
+                        <Copy className="w-4 h-4 mr-2" />
+                        البحث عن المكرر
+                      </Button>
+
+                      <Button
+                        onClick={exportResults}
+                        variant="outline"
+                        size="sm"
+                        className="border-green-300 text-green-700 hover:bg-green-50"
+                      >
+                        <Download className="w-4 h-4 mr-2" />
+                        تصدير النتائج
+                      </Button>
+
+                      <Button
+                        onClick={clearAll}
+                        variant="outline"
+                        size="sm"
+                        className="border-red-300 text-red-700 hover:bg-red-50"
+                      >
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        مسح الكل
+                      </Button>
+
+                      <Button
+                        onClick={() => setShowFilters(!showFilters)}
+                        variant="outline"
+                        size="sm"
+                        className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                      >
+                        <Filter className="w-4 h-4 mr-2" />
+                        فلاتر متقدمة
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
+                  )}
+                </CardContent>
+              </Card>
 
               {/* Main Content Tabs */}
               {images.length > 0 && (
