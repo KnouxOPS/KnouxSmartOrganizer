@@ -465,7 +465,7 @@ export default function Index() {
 
                             const success = await fileSystemManager.createOrganizedFolders();
                             if (success) {
-                              toast.success("✅ تم إ��شاء المجلدات المنظمة!", {
+                              toast.success("✅ تم إنشاء المجلدات المنظمة!", {
                                 description: "يمكنك الآن نقل الصور حسب التصنيف"
                               });
                             } else {
@@ -525,9 +525,7 @@ export default function Index() {
                           const selfies = images.filter(img =>
                             img.analysis?.faces && img.analysis.faces.length > 0
                           );
-                          toast.success(`👤 وجدت ${selfies.length} صورة شخصية`, {
-                            description: "جاهزة للنقل لمجلد الصور الشخصية"
-                          });
+                          toast.success(`👤 وجدت ${selfies.length} صورة شخصية`);
                         }}
                         variant="outline"
                         className="border-purple-300 text-purple-700 hover:bg-purple-50"
@@ -541,9 +539,7 @@ export default function Index() {
                           const documents = images.filter(img =>
                             img.analysis?.text && img.analysis.text.text.length > 10
                           );
-                          toast.success(`📄 وجدت ${documents.length} وثيقة`, {
-                            description: "جاهزة للنقل لمجلد الوثائق"
-                          });
+                          toast.success(`📄 وجدت ${documents.length} وثيقة`);
                         }}
                         variant="outline"
                         className="border-blue-300 text-blue-700 hover:bg-blue-50"
@@ -560,9 +556,7 @@ export default function Index() {
                               analysis: img.analysis!
                             }))
                           );
-                          toast.info(`🔍 وجدت ${duplicates.length} مجموعة صور متشابهة`, {
-                            description: "جاهزة للمراجعة والحذف"
-                          });
+                          toast.info(`🔍 وجدت ${duplicates.length} مجموعة صور متشابهة`);
                         }}
                         variant="outline"
                         className="border-amber-300 text-amber-700 hover:bg-amber-50"
@@ -614,9 +608,7 @@ export default function Index() {
                                 }
                               }
 
-                              toast.success(`🎉 تم ترتيب ${organized} صورة!`, {
-                                description: "الصور منظمة في مجلدات حسب المحتوى"
-                              });
+                              toast.success(`🎉 تم ترتيب ${organized} صورة!`);
 
                               // Celebrate with confetti
                               confetti({
@@ -627,16 +619,14 @@ export default function Index() {
                               });
 
                             } catch (error) {
-                              toast.error("❌ فشل في الترتيب التلقائي", {
-                                description: error.message
-                              });
+                              toast.error("❌ فشل في الترتيب التلقائي");
                             }
                           }}
                           className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold text-lg px-8 py-4"
                           size="lg"
                         >
                           <Target className="w-6 h-6 mr-3" />
-                          🎯 ت��تيب كامل تلقائي
+                          🎯 ترتيب كامل تلقائي
                         </Button>
                       </div>
                     </div>
