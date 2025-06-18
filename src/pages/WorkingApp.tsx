@@ -451,7 +451,7 @@ export default function WorkingApp() {
       // فلترة المعالجة
       if (showProcessedOnly && !img.processed) return false;
 
-      // ��لترة الثقة
+      // فلترة الثقة
       if (img.analysis) {
         const confidence = img.analysis.confidence * 100;
         if (confidence < minConfidence[0]) return false;
@@ -540,7 +540,7 @@ export default function WorkingApp() {
               <Upload className="w-12 h-12 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-blue-600 mb-2">
-              اسحب ا��ملفات هنا
+              اسحب الملفات هنا
             </h3>
             <p className="text-blue-500">سيتم رفع ومعالجة الصور تلقائياً</p>
           </div>
@@ -904,6 +904,65 @@ export default function WorkingApp() {
 
           {/* المنطقة الرئيسية */}
           <div className="lg:col-span-9 space-y-6">
+            {/* نتائج المعالجة */}
+            {!isProcessing && images.length > 0 && stats.processed > 0 && (
+              <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center text-green-700">
+                    <CheckCircle className="w-6 h-6 mr-2" />
+                    نتائج المعالجة المكتملة
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center p-3 bg-white rounded-lg">
+                      <div className="text-2xl font-bold text-green-600">
+                        {stats.processed}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        صورة تم تحليلها
+                      </div>
+                    </div>
+                    <div className="text-center p-3 bg-white rounded-lg">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {Object.keys(stats.categories).length}
+                      </div>
+                      <div className="text-sm text-gray-600">فئة مكتشفة</div>
+                    </div>
+                    <div className="text-center p-3 bg-white rounded-lg">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {stats.faces}
+                      </div>
+                      <div className="text-sm text-gray-600">وجه مكتشف</div>
+                    </div>
+                    <div className="text-center p-3 bg-white rounded-lg">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {stats.processed > 0
+                          ? Math.round(
+                              (images.reduce(
+                                (sum, img) =>
+                                  sum + (img.analysis?.confidence || 0),
+                                0,
+                              ) /
+                                stats.processed) *
+                                100,
+                            )
+                          : 0}
+                        %
+                      </div>
+                      <div className="text-sm text-gray-600">دقة التحليل</div>
+                    </div>
+                  </div>
+                  <div className="mt-4 p-3 bg-blue-100 rounded-lg">
+                    <p className="text-sm text-blue-800 text-center">
+                      🎉 تم تنظيم صورك وتصنيفها بنجاح! يمكنك الآن تصفحها والبحث
+                      فيها بسهولة في الأسفل
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* شريط التقدم */}
             {isProcessing && (
               <Card>
