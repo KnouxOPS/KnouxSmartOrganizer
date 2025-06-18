@@ -1,667 +1,727 @@
-import * as tf from "@tensorflow/tfjs";
-import * as faceapi from "face-api.js";
-import Tesseract from "tesseract.js";
-import type {
-  ImageAnalysis,
-  FaceDetection,
-  OCRResult,
-  DetectedObject,
-  ImageCategory,
-  AIModel,
-} from "@/types/organizer";
+// src/lib/ai-engine.ts
 
-export class AIEngine {
-  private models: Map<string, tf.LayersModel | any> = new Map();
-  private modelStatus: Map<string, AIModel> = new Map();
-  private initialized = false;
-  private tesseractWorker: Tesseract.Worker | null = null;
+import { pipeline, RawImage } from "@xenova/transformers";
+import * as nsfwjs from "nsfwjs";
+import * as faceapi from "@vladmandic/face-api";
+import { createWorker } from "tesseract.js";
+import { phash } from "image-hash";
 
-  constructor() {
-    // Initialize immediately with working models
-    this.initializeModels();
-  }
+// --- واجهة التحكم التي يضبطها المستخدم ---
+export interface AiSettings {
+  runClassifier: boolean;
+  runCaptioner: boolean;
+  runObjectDetection: boolean;
+  runNsfw: boolean;
+  nsfwThreshold: number; // 0.1 to 0.9
+  runFaceDetection: boolean;
+  runOcr: boolean;
+  runDuplicateDetection: boolean;
+  runQualityAnalysis: boolean;
+  runColorPalette: boolean;
+}
 
-  private async initializeModels() {
-    if (this.initialized) return;
+// --- واجهة البيانات التفصيلية لكل صورة ---
+export interface ImageAnalysis {
+  id: string;
+  file: File;
+  previewUrl: string;
+  error?: string;
 
-    // Set up all models as ready with real implementations
-    this.setupWorkingModels();
-    this.initialized = true;
-    console.log("🧠 AI Engine initialized with working models");
+  // بيانات أساسية
+  dimensions: { width: number; height: number };
+  size: number; // in MB
 
-    // Initialize Tesseract in background
-    this.initializeTesseract();
-  }
+  // بيانات الذكاء الاصطناعي
+  classification?: { label: string; score: number }[];
+  description?: string;
+  objects?: { box: any; label: string; score: number }[];
+  nsfw?: {
+    className: "Porn" | "Hentai" | "Sexy" | "Drawing" | "Neutral";
+    probability: number;
+  }[];
+  faces?: {
+    age: number;
+    gender: "male" | "female";
+    expression: string;
+    confidence: number;
+    box: any;
+  }[];
+  ocrText?: string;
+  pHash?: string;
+  quality?: {
+    sharpness: number;
+    contrast: number;
+    brightness: number;
+    score: number;
+  };
+  palette?: string[]; // hex codes
 
-  private setupWorkingModels() {
-    // Face Detection - Working Implementation
-    this.updateModelStatus("face-detection", {
-      name: "Face Detection AI",
-      type: "detection",
-      loaded: true,
-      loading: false,
-      version: "2.0.0",
-      size: "Ready",
-    });
+  // إحصائيات المعالجة
+  processingTime: number;
+  timestamp: Date;
+}
 
-    // Classification - Working Implementation
-    this.updateModelStatus("classification", {
-      name: "Smart Image Classification",
-      type: "classification",
-      loaded: true,
-      loading: false,
-      version: "2.0.0",
-      size: "Ready",
-    });
+// --- محرك الذكاء الاصطناعي ---
+class AIEngine {
+  private models: any = {};
+  private isReady = false;
+  private loadingProgress = 0;
 
-    // OCR - Real Tesseract Implementation
-    this.updateModelStatus("ocr", {
-      name: "Arabic/English OCR",
-      type: "ocr",
-      loaded: true,
-      loading: false,
-      version: "5.1.1",
-      size: "Ready",
-    });
+  async initialize(
+    settings: AiSettings,
+    progressCallback: (status: string, progress: number) => void,
+  ) {
+    if (this.isReady) return;
 
-    // NSFW - Working Implementation
-    this.updateModelStatus("nsfw", {
-      name: "Content Safety AI",
-      type: "nsfw",
-      loaded: true,
-      loading: false,
-      version: "1.5.0",
-      size: "Ready",
-    });
-  }
+    this.loadingProgress = 0;
+    progressCallback("🚀 بدء تهيئة النماذج المتقدمة...", 0);
 
-  private async initializeTesseract() {
     try {
-      this.tesseractWorker = await Tesseract.createWorker(["ara", "eng"]);
-      console.log("📝 Tesseract OCR initialized successfully");
+      // تحميل النماذج بناءً على إعدادات المستخدم لتوفير الذاكرة
+      let totalModels = 0;
+      let loadedModels = 0;
+
+      // حساب عدد النماذج المطلوبة
+      if (settings.runClassifier) totalModels++;
+      if (settings.runCaptioner) totalModels++;
+      if (settings.runObjectDetection) totalModels++;
+      if (settings.runNsfw) totalModels++;
+      if (settings.runFaceDetection) totalModels++;
+      if (settings.runOcr) totalModels++;
+
+      // 1. نموذج التصنيف العام الدقيق - CLIP ViT
+      if (settings.runClassifier) {
+        progressCallback(
+          "📸 تحميل نموذج التصنيف المتقدم (CLIP)...",
+          (loadedModels / totalModels) * 90,
+        );
+        this.models.classifier = await pipeline(
+          "zero-shot-image-classification",
+          "Xenova/clip-vit-base-patch32",
+        );
+        loadedModels++;
+        progressCallback(
+          "✅ تم تحميل نموذج التصنيف",
+          (loadedModels / totalModels) * 90,
+        );
+      }
+
+      // 2. الوصف الذكي والسياقي - ViT-GPT2
+      if (settings.runCaptioner) {
+        progressCallback(
+          "📝 تحميل نموذج الوصف الذكي (ViT-GPT2)...",
+          (loadedModels / totalModels) * 90,
+        );
+        this.models.captioner = await pipeline(
+          "image-to-text",
+          "Xenova/vit-gpt2-image-captioning",
+        );
+        loadedModels++;
+        progressCallback(
+          "✅ تم تحميل نموذج الوصف",
+          (loadedModels / totalModels) * 90,
+        );
+      }
+
+      // 3. كشف الأجسام وتحديدها - YOLOS
+      if (settings.runObjectDetection) {
+        progressCallback(
+          "🎯 تحميل نموذج كشف الأجسام (YOLOS)...",
+          (loadedModels / totalModels) * 90,
+        );
+        this.models.objectDetector = await pipeline(
+          "object-detection",
+          "Xenova/yolos-tiny",
+        );
+        loadedModels++;
+        progressCallback(
+          "✅ تم تحميل نموذج كشف الأجسام",
+          (loadedModels / totalModels) * 90,
+        );
+      }
+
+      // 4. كشف المحتوى الحساس - NSFWJS
+      if (settings.runNsfw) {
+        progressCallback(
+          "🔍 تحميل نموذج المحتوى الحساس (NSFWJS)...",
+          (loadedModels / totalModels) * 90,
+        );
+        this.models.nsfw = await nsfwjs.load();
+        loadedModels++;
+        progressCallback(
+          "✅ تم تحميل نموذج المحتوى الحساس",
+          (loadedModels / totalModels) * 90,
+        );
+      }
+
+      // 5. كشف وتحليل الوجوه - Face-API
+      if (settings.runFaceDetection) {
+        progressCallback(
+          "👤 تحميل نماذج كشف الوجوه (Face-API)...",
+          (loadedModels / totalModels) * 90,
+        );
+        try {
+          // تحميل النماذج من المجلد المحلي أو CDN
+          const modelPath = "/models/face-api/";
+          await faceapi.nets.ssdMobilenetv1.loadFromUri(modelPath);
+          await faceapi.nets.ageGenderNet.loadFromUri(modelPath);
+          await faceapi.nets.faceExpressionNet.loadFromUri(modelPath);
+          await faceapi.nets.faceLandmark68Net.loadFromUri(modelPath);
+        } catch (error) {
+          console.warn(
+            "فشل تحميل نماذج Face-API من المجلد المحلي، محاولة التحميل من CDN...",
+          );
+          // Fallback: محاولة التحميل من CDN
+          const cdnPath =
+            "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model/";
+          await faceapi.nets.ssdMobilenetv1.loadFromUri(cdnPath);
+          await faceapi.nets.ageGenderNet.loadFromUri(cdnPath);
+          await faceapi.nets.faceExpressionNet.loadFromUri(cdnPath);
+          await faceapi.nets.faceLandmark68Net.loadFromUri(cdnPath);
+        }
+        loadedModels++;
+        progressCallback(
+          "✅ تم تحميل نماذج كشف الوجوه",
+          (loadedModels / totalModels) * 90,
+        );
+      }
+
+      // 6. استخراج النصوص - Tesseract.js
+      if (settings.runOcr) {
+        progressCallback(
+          "📖 تهيئة قارئ النصوص (Tesseract)...",
+          (loadedModels / totalModels) * 90,
+        );
+        this.models.ocr = await createWorker("eng+ara");
+        loadedModels++;
+        progressCallback(
+          "✅ تم تهيئة قارئ النصوص",
+          (loadedModels / totalModels) * 90,
+        );
+      }
+
+      this.isReady = true;
+      progressCallback("🎉 جميع النماذج المطلوبة جاهزة للاستخدام!", 100);
     } catch (error) {
-      console.log("OCR fallback mode activated");
+      console.error("خطأ في تهيئة النماذج:", error);
+      progressCallback(`❌ خطأ في تحميل النماذج: ${error}`, 0);
+      throw error;
     }
   }
 
-  private updateModelStatus(id: string, model: AIModel) {
-    this.modelStatus.set(id, model);
-  }
+  async analyze(file: File, settings: AiSettings): Promise<ImageAnalysis> {
+    if (!this.isReady)
+      throw new Error("المحرك لم يُهيأ بعد. استدعي initialize() أولاً.");
 
-  getModelStatus(): Map<string, AIModel> {
-    return new Map(this.modelStatus);
-  }
+    const startTime = Date.now();
+    const previewUrl = URL.createObjectURL(file);
+    const imageElement = await this.createImageElement(previewUrl);
 
-  async analyzeImage(file: File): Promise<ImageAnalysis> {
-    await this.initializeModels();
-
-    // Create image element for analysis
-    const imageElement = await this.createImageElement(file);
-
-    // Perform comprehensive analysis
-    const analysis = await this.performComprehensiveAnalysis(
+    const analysis: ImageAnalysis = {
+      id: crypto.randomUUID(),
       file,
-      imageElement,
-    );
+      previewUrl,
+      dimensions: { width: imageElement.width, height: imageElement.height },
+      size: parseFloat((file.size / (1024 * 1024)).toFixed(2)),
+      processingTime: 0,
+      timestamp: new Date(),
+    };
 
+    try {
+      // تنفيذ كل مهمة ذكاء اصطناعي بناءً على إعدادات المستخدم
+
+      // 1. التصنيف العام الدقيق
+      if (settings.runClassifier && this.models.classifier) {
+        try {
+          const candidateLabels = [
+            "person",
+            "people",
+            "selfie",
+            "portrait",
+            "group photo",
+            "car",
+            "vehicle",
+            "motorcycle",
+            "bicycle",
+            "truck",
+            "animal",
+            "dog",
+            "cat",
+            "bird",
+            "horse",
+            "wildlife",
+            "food",
+            "meal",
+            "restaurant",
+            "cooking",
+            "drink",
+            "nature",
+            "landscape",
+            "mountain",
+            "beach",
+            "forest",
+            "sunset",
+            "document",
+            "text",
+            "paper",
+            "book",
+            "certificate",
+            "screenshot",
+            "computer screen",
+            "mobile screen",
+            "building",
+            "architecture",
+            "house",
+            "street",
+            "sport",
+            "game",
+            "activity",
+            "exercise",
+            "art",
+            "painting",
+            "drawing",
+            "creative",
+          ];
+          const results = await this.models.classifier(
+            previewUrl,
+            candidateLabels,
+          );
+          analysis.classification = results.slice(0, 5); // أفضل 5 تصنيفات
+        } catch (e) {
+          console.error("Classifier Error:", e);
+          analysis.error = `خطأ في التصنيف: ${e}`;
+        }
+      }
+
+      // 2. الوصف الذكي والسياقي
+      if (settings.runCaptioner && this.models.captioner) {
+        try {
+          const result = await this.models.captioner(previewUrl);
+          analysis.description =
+            result[0]?.generated_text || "لا يمكن وصف الصورة";
+        } catch (e) {
+          console.error("Captioner Error:", e);
+          analysis.error = `خطأ في الوصف: ${e}`;
+        }
+      }
+
+      // 3. كشف الأجسام وتحديدها
+      if (settings.runObjectDetection && this.models.objectDetector) {
+        try {
+          const results = await this.models.objectDetector(previewUrl);
+          analysis.objects = results.map((obj: any) => ({
+            box: obj.box,
+            label: obj.label,
+            score: obj.score,
+          }));
+        } catch (e) {
+          console.error("Object Detection Error:", e);
+          analysis.error = `خطأ في كشف الأجسام: ${e}`;
+        }
+      }
+
+      // 4. كشف المحتوى الحساس
+      if (settings.runNsfw && this.models.nsfw) {
+        try {
+          const predictions = await this.models.nsfw.classify(imageElement);
+          analysis.nsfw = predictions.filter((p: any) => p.probability > 0.01); // إظهار النتائج ذات الصلة
+        } catch (e) {
+          console.error("NSFW Error:", e);
+          analysis.error = `خطأ في كشف المحتوى: ${e}`;
+        }
+      }
+
+      // 5. كشف وتحليل الوجوه المتقدم
+      if (settings.runFaceDetection) {
+        try {
+          const detections = await faceapi
+            .detectAllFaces(imageElement)
+            .withAgeAndGender()
+            .withFaceExpressions()
+            .withFaceLandmarks();
+
+          analysis.faces = detections.map((d: any) => ({
+            age: Math.round(d.age || 25),
+            gender: d.gender || "unknown",
+            expression: this.getTopExpression(d.expressions),
+            confidence: d.detection?.score || 0.5,
+            box: d.detection?.box || {},
+          }));
+        } catch (e) {
+          console.error("Face API Error:", e);
+          analysis.error = `خطأ في كشف الوجوه: ${e}`;
+        }
+      }
+
+      // 6. استخراج النصوص (OCR)
+      if (settings.runOcr && this.models.ocr) {
+        try {
+          const {
+            data: { text },
+          } = await this.models.ocr.recognize(file);
+          analysis.ocrText = text.trim();
+        } catch (e) {
+          console.error("OCR Error:", e);
+          analysis.error = `خطأ في قراءة النصوص: ${e}`;
+        }
+      }
+
+      // 7. كشف النسخ المكررة (pHash)
+      if (settings.runDuplicateDetection) {
+        try {
+          analysis.pHash = await this.generatePHash(imageElement);
+        } catch (e) {
+          console.error("pHash Error:", e);
+          analysis.error = `خطأ في توليد البصمة: ${e}`;
+        }
+      }
+
+      // 8. تقييم جودة وجمالية الصورة
+      if (settings.runQualityAnalysis) {
+        try {
+          analysis.quality = await this.analyzeQuality(imageElement);
+        } catch (e) {
+          console.error("Quality Analysis Error:", e);
+          analysis.error = `خطأ في تحليل الجودة: ${e}`;
+        }
+      }
+
+      // 9. استخراج لوحة الألوان
+      if (settings.runColorPalette) {
+        try {
+          analysis.palette = await this.extractColorPalette(imageElement);
+        } catch (e) {
+          console.error("Color Palette Error:", e);
+          analysis.error = `خطأ في استخراج الألوان: ${e}`;
+        }
+      }
+    } catch (generalError) {
+      console.error("General Analysis Error:", generalError);
+      analysis.error = `خطأ عام في التحليل: ${generalError}`;
+    }
+
+    analysis.processingTime = Date.now() - startTime;
     return analysis;
   }
 
-  private async performComprehensiveAnalysis(
-    file: File,
-    imageElement: HTMLImageElement,
-  ): Promise<ImageAnalysis> {
-    console.log(`🔍 Analyzing: ${file.name}`);
+  // --- خوارزميات مخصصة ---
 
-    // Parallel analysis for speed
-    const [classification, faces, textResult, nsfwResult, colors] =
-      await Promise.all([
-        this.smartClassification(file.name, imageElement),
-        this.realFaceDetection(file.name, imageElement),
-        this.realOCRExtraction(file),
-        this.contentSafetyCheck(imageElement),
-        this.extractDominantColors(imageElement),
-      ]);
+  private async generatePHash(imageElement: HTMLImageElement): Promise<string> {
+    // تحويل الصورة إلى Canvas للمعالجة
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
 
-    return {
-      description: classification.description,
-      confidence: classification.confidence,
-      faces,
-      text: textResult,
-      isNSFW: nsfwResult.isNSFW,
-      nsfwScore: nsfwResult.score,
-      dominantColors: colors,
-    };
+    // تصغير الصورة لحساب البصمة
+    canvas.width = 32;
+    canvas.height = 32;
+    ctx.drawImage(imageElement, 0, 0, 32, 32);
+
+    const imageData = ctx.getImageData(0, 0, 32, 32);
+    let hash = "";
+
+    // حساب متوسط السطوع
+    let total = 0;
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      total += (r + g + b) / 3;
+    }
+    const average = total / (imageData.data.length / 4);
+
+    // إنشاء البصمة
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      const brightness = (r + g + b) / 3;
+      hash += brightness > average ? "1" : "0";
+    }
+
+    return hash;
   }
 
-  private async smartClassification(
-    filename: string,
-    imageElement: HTMLImageElement,
-  ): Promise<{ description: string; confidence: number }> {
-    const name = filename.toLowerCase();
-
-    // Advanced pattern matching with machine learning-like confidence
-    const classificationRules = [
-      {
-        patterns: [
-          /food|pizza|meal|dinner|lunch|breakfast|restaurant|kitchen|cooking/,
-        ],
-        descriptions: [
-          "طبق طعام شهي ولذيذ",
-          "وجبة مُعدة بعناية وإتقان",
-          "طعام طازج وجذاب بصرياً",
-          "أكلة تقليدية أو عصرية",
-          "مأكولات شهية ومغذية",
-        ],
-        confidence: 0.92,
-      },
-      {
-        patterns: [
-          /nature|landscape|sunset|mountain|beach|tree|flower|garden|outdoor/,
-        ],
-        descriptions: [
-          "منظر طبيعي خلاب وساحر",
-          "جمال الطبيعة في أبهى صورها",
-          "مشهد طبيعي يأسر الأنظار",
-          "لوحة فنية من صنع الطبيعة",
-          "منظر يبعث على الهدوء والسكينة",
-        ],
-        confidence: 0.89,
-      },
-      {
-        patterns: [/selfie|portrait|face|person|people|human|family|group/],
-        descriptions: [
-          "صورة شخصية جميلة وواضحة",
-          "بورتريه احترافي بجودة عالية",
-          "صورة تعكس شخصية الموضوع",
-          "لقطة شخصية بإضاءة مثالية",
-          "صورة عائلية أو جماعية دافئة",
-        ],
-        confidence: 0.94,
-      },
-      {
-        patterns: [
-          /document|text|paper|scan|recipe|certificate|id|license|passport/,
-        ],
-        descriptions: [
-          "وثيقة مهمة ومصانة جيداً",
-          "مستند رسمي أو شخصي",
-          "ورقة تحتوي على معلومات قيمة",
-          "مسح ضوئي لوثيقة أساسية",
-          "مستند نصي واضح ومقروء",
-        ],
-        confidence: 0.96,
-      },
-      {
-        patterns: [/screenshot|app|interface|mobile|computer|software|website/],
-        descriptions: [
-          "لقطة شاشة لتطبيق أو موقع",
-          "واجهة مستخدم احترافية",
-          "شاشة تطبيق حديث ومبتكر",
-          "تصميم رقمي أنيق وعملي",
-          "عرض تقني لبرنامج أو تطبيق",
-        ],
-        confidence: 0.87,
-      },
-      {
-        patterns: [/city|building|architecture|street|urban|skyline/],
-        descriptions: [
-          "منظر حضري للمدينة الحديثة",
-          "عمارة وتصميم معاصر",
-          "أفق المدينة في أوقات مختلفة",
-          "جمال العمران والحضارة",
-          "تطور عمراني وحضاري",
-        ],
-        confidence: 0.85,
-      },
-      {
-        patterns: [/car|vehicle|transport|bike|motorcycle|truck/],
-        descriptions: [
-          "مركبة أنيقة وحديثة",
-          "تصميم سيارة متطور",
-          "وسيلة نقل عملية وجميلة",
-          "هندسة مركبة متقدمة",
-          "تقنية النقل الحديثة",
-        ],
-        confidence: 0.88,
-      },
-      {
-        patterns: [/animal|pet|cat|dog|bird|wildlife/],
-        descriptions: [
-          "حيوان أليف لطيف ومحبوب",
-          "مخلوق جميل من الطبيعة",
-          "حيوان في بيئته الطبيعية",
-          "صديق الإنسان الوفي",
-          "جمال الحياة البرية",
-        ],
-        confidence: 0.91,
-      },
-    ];
-
-    // Check each classification rule
-    for (const rule of classificationRules) {
-      if (rule.patterns.some((pattern) => pattern.test(name))) {
-        const randomDesc =
-          rule.descriptions[
-            Math.floor(Math.random() * rule.descriptions.length)
-          ];
-        return {
-          description: randomDesc,
-          confidence: rule.confidence + (Math.random() - 0.5) * 0.1, // Add slight variance
-        };
-      }
-    }
-
-    // Default sophisticated analysis
-    const defaultDescriptions = [
-      "صورة رقمية عالية الجودة ومميزة",
-      "محتوى بصري جذاب ومعبر",
-      "صورة واضحة بتفاصيل دقيقة",
-      "لقطة فوتوغرافية احترافية",
-      "محتوى مرئي غني بالتفاصيل",
-    ];
-
-    return {
-      description:
-        defaultDescriptions[
-          Math.floor(Math.random() * defaultDescriptions.length)
-        ],
-      confidence: 0.75 + Math.random() * 0.15,
-    };
-  }
-
-  private async realFaceDetection(
-    filename: string,
-    imageElement: HTMLImageElement,
-  ): Promise<FaceDetection[]> {
-    const name = filename.toLowerCase();
-
-    // Advanced face detection simulation based on context
-    if (
-      name.includes("family") ||
-      name.includes("group") ||
-      name.includes("wedding") ||
-      name.includes("party")
-    ) {
-      const faceCount = 3 + Math.floor(Math.random() * 4); // 3-6 faces
-      const faces: FaceDetection[] = [];
-
-      for (let i = 0; i < faceCount; i++) {
-        faces.push({
-          confidence: 0.85 + Math.random() * 0.15,
-          age: 5 + Math.floor(Math.random() * 60), // Ages 5-65
-          gender: Math.random() > 0.5 ? "male" : "female",
-        });
-      }
-
-      return faces.sort((a, b) => b.confidence - a.confidence);
-    } else if (
-      name.includes("selfie") ||
-      name.includes("portrait") ||
-      name.includes("headshot")
-    ) {
-      return [
-        {
-          confidence: 0.92 + Math.random() * 0.08,
-          age: 18 + Math.floor(Math.random() * 40), // Ages 18-58
-          gender: Math.random() > 0.5 ? "male" : "female",
-        },
-      ];
-    } else if (name.includes("couple") || name.includes("pair")) {
-      return [
-        {
-          confidence: 0.89 + Math.random() * 0.1,
-          age: 25 + Math.floor(Math.random() * 20),
-          gender: "male",
-        },
-        {
-          confidence: 0.87 + Math.random() * 0.1,
-          age: 23 + Math.floor(Math.random() * 18),
-          gender: "female",
-        },
-      ];
-    }
-
-    // Random chance of faces in other images
-    if (Math.random() < 0.3) {
-      // 30% chance
-      return [
-        {
-          confidence: 0.75 + Math.random() * 0.15,
-          age: 20 + Math.floor(Math.random() * 40),
-          gender: Math.random() > 0.5 ? "male" : "female",
-        },
-      ];
-    }
-
-    return [];
-  }
-
-  private async realOCRExtraction(file: File): Promise<OCRResult> {
-    const filename = file.name.toLowerCase();
-
-    // Try real Tesseract if available
-    if (
-      this.tesseractWorker &&
-      (filename.includes("document") ||
-        filename.includes("text") ||
-        filename.includes("scan"))
-    ) {
-      try {
-        const {
-          data: { text, confidence },
-        } = await this.tesseractWorker.recognize(file);
-
-        if (text.trim().length > 0) {
-          return {
-            text: text.trim(),
-            confidence: confidence / 100,
-            words: [], // Simplified for now
-          };
-        }
-      } catch (error) {
-        console.log("Tesseract extraction failed, using fallback");
-      }
-    }
-
-    // Smart OCR simulation
-    const ocrSamples = [
-      {
-        patterns: [/recipe|cooking|food/],
-        texts: [
-          "وصفة كوكيز الشوكولاتة\n2 كوب دقيق\n1 كوب سكر\n1/2 كوب زبدة\nاخبزي على 180 درجة لمدة 12 دقيقة",
-          "مكونات البيتزا:\nعجينة البيتزا\nصلصة الطماطم\nجبن موزاريلا\nفلفل ملون\nزيتون أسود",
-          "طريقة عمل الكيك:\n3 بيضات\nكوب سكر\nكوب دقيق\nملعقة بيكنج باودر\nكوب حليب",
-        ],
-      },
-      {
-        patterns: [/receipt|bill|invoice/],
-        texts: [
-          "فاتورة شراء\nالتاريخ: 2024/12/15\nالمجموع: 250.00 ريال\nضريبة القيمة المضافة: 37.50\nشكراً لزيارتكم",
-          "إيصال دفع\nرقم العملية: 123456\nالمبلغ: 150.75 ريال\nالوقت: 14:30\nتمت العملية بنجاح",
-          "كشف حساب\nالرصيد السابق: 1,250.00\nالإيداعات: 500.00\nالمسحوبات: 200.00\nالرصيد الحالي: 1,550.00",
-        ],
-      },
-      {
-        patterns: [/certificate|diploma|license|id/],
-        texts: [
-          "شهادة إنجاز\nيشهد هذا المعهد بأن\nالطالب: أحمد محمد علي\nقد أنهى بنجاح دورة\nالذكاء الاصطناعي المتقدم",
-          "رخصة القيادة\nرقم الرخصة: 987654321\nتاريخ الإصدار: 2023/01/15\nتاريخ الانتهاء: 2028/01/15\nفئة المركبة: خاصة",
-          "بطاقة هوية\nالاسم: سارة أحمد الأحمد\nرقم الهوية: 1234567890\nتاريخ الميلاد: 1990/05/20\nمكان الإصدار: الرياض",
-        ],
-      },
-      {
-        patterns: [/screenshot|app|interface/],
-        texts: [
-          "مرحباً بك في التطبيق\nسجل دخولك للمتابعة\nالبريد الإلكتروني: user@example.com\nكلمة المرور: ••••••••",
-          "الإعدادات\nالإشعارات: مفعلة\nالموقع: مسموح\nالكاميرا: مسموح\nالميكروفون: غير مسموح",
-          "رسائل جديدة (3)\nأحمد: مرحباً كيف حالك؟\nفاطمة: الاجتماع غداً الساعة 2\nمحمد: تم إرسال الملفات",
-        ],
-      },
-    ];
-
-    // Match patterns and return appropriate text
-    for (const sample of ocrSamples) {
-      if (sample.patterns.some((pattern) => pattern.test(filename))) {
-        const randomText =
-          sample.texts[Math.floor(Math.random() * sample.texts.length)];
-        return {
-          text: randomText,
-          confidence: 0.85 + Math.random() * 0.1,
-          words: this.generateWords(randomText),
-        };
-      }
-    }
-
-    return { text: "", confidence: 0, words: [] };
-  }
-
-  private generateWords(text: string): Array<{
-    text: string;
-    confidence: number;
-    bbox: { x: number; y: number; width: number; height: number };
+  private async analyzeQuality(imageElement: HTMLImageElement): Promise<{
+    sharpness: number;
+    contrast: number;
+    brightness: number;
+    score: number;
   }> {
-    const words = text.split(/\s+/).filter((word) => word.length > 0);
-    return words.slice(0, 5).map((word, index) => ({
-      text: word,
-      confidence: 0.8 + Math.random() * 0.2,
-      bbox: {
-        x: 10 + (index % 3) * 100,
-        y: 10 + Math.floor(index / 3) * 25,
-        width: word.length * 8 + 10,
-        height: 20,
-      },
-    }));
-  }
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
 
-  private async contentSafetyCheck(
-    imageElement: HTMLImageElement,
-  ): Promise<{ isNSFW: boolean; score: number }> {
-    // Advanced content safety with high accuracy
-    const safetyScore = Math.random() * 0.05; // Very low NSFW probability for demo
+    canvas.width = Math.min(imageElement.width, 400);
+    canvas.height = Math.min(imageElement.height, 400);
+    ctx.drawImage(imageElement, 0, 0, canvas.width, canvas.height);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    // حساب السطوع
+    let totalBrightness = 0;
+    let brightnessValues = [];
+
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      const brightness = (r + g + b) / 3;
+      totalBrightness += brightness;
+      brightnessValues.push(brightness);
+    }
+
+    const avgBrightness = totalBrightness / brightnessValues.length;
+
+    // حساب التباين (Contrast)
+    let contrastSum = 0;
+    for (const brightness of brightnessValues) {
+      contrastSum += Math.pow(brightness - avgBrightness, 2);
+    }
+    const contrast = Math.sqrt(contrastSum / brightnessValues.length) / 255;
+
+    // حساب الحدة (Sharpness) باستخدام Sobel operator
+    const sharpness = this.calculateSharpness(imageData);
+
+    // حساب درجة الجودة الإجمالية
+    const brightnessScore = 1 - Math.abs(avgBrightness - 128) / 128; // أفضل سطوع حول 128
+    const contrastScore = Math.min(contrast * 2, 1); // التباين الجيد
+    const sharpnessScore = Math.min(sharpness, 1); // الحدة الجيدة
+
+    const overallScore = (brightnessScore + contrastScore + sharpnessScore) / 3;
 
     return {
-      isNSFW: safetyScore > 0.7, // Very conservative threshold
-      score: safetyScore,
+      sharpness: parseFloat(sharpnessScore.toFixed(3)),
+      contrast: parseFloat(contrast.toFixed(3)),
+      brightness: parseFloat((avgBrightness / 255).toFixed(3)),
+      score: parseFloat(overallScore.toFixed(3)),
     };
   }
 
-  private async extractDominantColors(
-    imageElement: HTMLImageElement,
-  ): Promise<string[]> {
-    try {
-      // Real color extraction using canvas
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return this.getFallbackColors();
+  private calculateSharpness(imageData: ImageData): number {
+    const { width, height, data } = imageData;
+    let sharpness = 0;
 
-      // Optimize for performance
-      const sampleSize = 64;
-      canvas.width = sampleSize;
-      canvas.height = sampleSize;
+    // Sobel operator للكشف عن الحواف
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const i = (y * width + x) * 4;
 
-      ctx.drawImage(imageElement, 0, 0, sampleSize, sampleSize);
-      const imageData = ctx.getImageData(0, 0, sampleSize, sampleSize);
+        // الحصول على قيم الرمادي للبكسلات المجاورة
+        const tl =
+          (data[i - width * 4 - 4] +
+            data[i - width * 4 - 3] +
+            data[i - width * 4 - 2]) /
+          3;
+        const tm =
+          (data[i - width * 4] +
+            data[i - width * 4 + 1] +
+            data[i - width * 4 + 2]) /
+          3;
+        const tr =
+          (data[i - width * 4 + 4] +
+            data[i - width * 4 + 5] +
+            data[i - width * 4 + 6]) /
+          3;
+        const ml = (data[i - 4] + data[i - 3] + data[i - 2]) / 3;
+        const mr = (data[i + 4] + data[i + 5] + data[i + 6]) / 3;
+        const bl =
+          (data[i + width * 4 - 4] +
+            data[i + width * 4 - 3] +
+            data[i + width * 4 - 2]) /
+          3;
+        const bm =
+          (data[i + width * 4] +
+            data[i + width * 4 + 1] +
+            data[i + width * 4 + 2]) /
+          3;
+        const br =
+          (data[i + width * 4 + 4] +
+            data[i + width * 4 + 5] +
+            data[i + width * 4 + 6]) /
+          3;
 
-      // Color quantization algorithm
-      const colorMap = new Map<string, number>();
-      const data = imageData.data;
+        // Sobel X و Y
+        const sobelX = -1 * tl + 1 * tr + -2 * ml + 2 * mr + -1 * bl + 1 * br;
+        const sobelY = -1 * tl + -2 * tm + -1 * tr + 1 * bl + 2 * bm + 1 * br;
 
-      for (let i = 0; i < data.length; i += 4) {
-        const r = Math.floor(data[i] / 16) * 16; // Reduce color space
-        const g = Math.floor(data[i + 1] / 16) * 16;
-        const b = Math.floor(data[i + 2] / 16) * 16;
-        const alpha = data[i + 3];
-
-        // Skip transparent pixels
-        if (alpha < 128) continue;
-
-        const hex = this.rgbToHex(r, g, b);
-        colorMap.set(hex, (colorMap.get(hex) || 0) + 1);
+        sharpness += Math.sqrt(sobelX * sobelX + sobelY * sobelY);
       }
-
-      // Get most frequent colors
-      const sortedColors = Array.from(colorMap.entries())
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 6)
-        .map(([color]) => color);
-
-      return sortedColors.length >= 3 ? sortedColors : this.getFallbackColors();
-    } catch (error) {
-      console.error("Color extraction failed:", error);
-      return this.getFallbackColors();
     }
+
+    return sharpness / (width * height * 255);
   }
 
-  private rgbToHex(r: number, g: number, b: number): string {
-    return (
-      "#" +
-      [r, g, b]
-        .map((x) => {
-          const hex = x.toString(16);
-          return hex.length === 1 ? "0" + hex : hex;
-        })
-        .join("")
+  private async extractColorPalette(
+    imageElement: HTMLImageElement,
+    k: number = 5,
+  ): Promise<string[]> {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+
+    // تصغير الصورة لتسريع المعالجة
+    canvas.width = 150;
+    canvas.height = 150;
+    ctx.drawImage(imageElement, 0, 0, 150, 150);
+
+    const imageData = ctx.getImageData(0, 0, 150, 150);
+    const pixels: [number, number, number][] = [];
+
+    // جمع جميع البكسلات
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      const r = imageData.data[i];
+      const g = imageData.data[i + 1];
+      const b = imageData.data[i + 2];
+      const a = imageData.data[i + 3];
+
+      // تجاهل البكسلات الشفافة
+      if (a > 128) {
+        pixels.push([r, g, b]);
+      }
+    }
+
+    // تطبيق K-Means clustering مبسط
+    const palette = this.kMeansClustering(pixels, k);
+
+    // تحويل إلى hex colors
+    return palette.map(
+      (color) =>
+        "#" +
+        color.map((c) => Math.round(c).toString(16).padStart(2, "0")).join(""),
     );
   }
 
-  private getFallbackColors(): string[] {
-    const colorPalettes = [
-      ["#FF6B35", "#F7931E", "#FFD23F", "#4A90E2"],
-      ["#8B4513", "#DEB887", "#F5F5DC", "#2E8B57"],
-      ["#FF6347", "#FFD700", "#228B22", "#8B4513"],
-      ["#4285F4", "#FFFFFF", "#F8F9FA", "#34A853"],
-      ["#1a1a2e", "#16213e", "#0f3460", "#533a7b"],
-    ];
+  private kMeansClustering(
+    pixels: [number, number, number][],
+    k: number,
+  ): [number, number, number][] {
+    // خوارزمية K-Means مبسطة
+    let centroids: [number, number, number][] = [];
 
-    return colorPalettes[Math.floor(Math.random() * colorPalettes.length)];
+    // تهيئة المراكز عشوائياً
+    for (let i = 0; i < k; i++) {
+      const randomPixel = pixels[Math.floor(Math.random() * pixels.length)];
+      centroids.push([...randomPixel]);
+    }
+
+    // تكرار للوصول للحل الأمثل
+    for (let iteration = 0; iteration < 20; iteration++) {
+      const clusters: [number, number, number][][] = Array(k)
+        .fill(null)
+        .map(() => []);
+
+      // تجميع البكسلات حسب أقرب مركز
+      for (const pixel of pixels) {
+        let minDistance = Infinity;
+        let closestCentroid = 0;
+
+        for (let j = 0; j < centroids.length; j++) {
+          const distance = Math.sqrt(
+            Math.pow(pixel[0] - centroids[j][0], 2) +
+              Math.pow(pixel[1] - centroids[j][1], 2) +
+              Math.pow(pixel[2] - centroids[j][2], 2),
+          );
+
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestCentroid = j;
+          }
+        }
+
+        clusters[closestCentroid].push(pixel);
+      }
+
+      // تحديث المراكز
+      for (let j = 0; j < centroids.length; j++) {
+        if (clusters[j].length > 0) {
+          const avgR =
+            clusters[j].reduce((sum, p) => sum + p[0], 0) / clusters[j].length;
+          const avgG =
+            clusters[j].reduce((sum, p) => sum + p[1], 0) / clusters[j].length;
+          const avgB =
+            clusters[j].reduce((sum, p) => sum + p[2], 0) / clusters[j].length;
+          centroids[j] = [avgR, avgG, avgB];
+        }
+      }
+    }
+
+    return centroids;
   }
 
-  private async createImageElement(file: File): Promise<HTMLImageElement> {
+  // --- Helper Methods ---
+
+  private createImageElement(url: string): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      img.crossOrigin = "anonymous";
       img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = URL.createObjectURL(file);
+      img.onerror = (err) => reject(err);
+      img.src = url;
     });
   }
 
-  async categorizeImage(analysis: ImageAnalysis): Promise<ImageCategory> {
-    const { description } = analysis;
-    const desc = description.toLowerCase();
+  private getTopExpression(expressions: any): string {
+    if (!expressions) return "neutral";
 
-    // Advanced categorization logic
-    if (desc.includes("طعام") || desc.includes("وجبة") || desc.includes("طبق"))
-      return "food";
-    if (
-      desc.includes("طبيعي") ||
-      desc.includes("منظر") ||
-      desc.includes("جمال")
-    )
-      return "nature";
-    if (
-      desc.includes("شخصية") ||
-      desc.includes("بورتريه") ||
-      desc.includes("عائلية")
-    )
-      return "selfies";
-    if (
-      desc.includes("وثيقة") ||
-      desc.includes("مستند") ||
-      desc.includes("ورقة")
-    )
-      return "documents";
-    if (
-      desc.includes("لقطة") ||
-      desc.includes("شاشة") ||
-      desc.includes("تطبيق")
-    )
-      return "screenshots";
-    if (analysis.faces.length > 0) return "selfies";
-    if (analysis.text.text.length > 10) return "documents";
+    const expressionNames: { [key: string]: string } = {
+      happy: "سعيد",
+      sad: "حزين",
+      angry: "غاضب",
+      fearful: "خائف",
+      disgusted: "مشمئز",
+      surprised: "متفاجئ",
+      neutral: "محايد",
+    };
 
-    return "other";
-  }
+    let topExpression = "neutral";
+    let maxProbability = 0;
 
-  generateTags(analysis: ImageAnalysis, filename: string): string[] {
-    const tags: string[] = [];
-    const desc = analysis.description.toLowerCase();
-    const name = filename.toLowerCase();
-
-    // Content-based tags
-    if (desc.includes("طعام") || name.includes("food"))
-      tags.push("طعام", "أكل");
-    if (desc.includes("طبيعة") || name.includes("nature"))
-      tags.push("طبيعة", "منظر");
-    if (desc.includes("شخصية") || analysis.faces.length > 0)
-      tags.push("أشخاص", "وجوه");
-    if (analysis.text.text.length > 0) tags.push("نص", "مستند");
-
-    // Quality tags
-    if (analysis.confidence > 0.9) tags.push("عالي الجودة");
-    if (analysis.faces.length > 2) tags.push("مجموعة");
-    if (analysis.dominantColors.length > 3) tags.push("ملون");
-
-    // Filename-based tags
-    if (name.includes("screenshot")) tags.push("لقطة شاشة");
-    if (name.includes("selfie")) tags.push("سيلفي");
-    if (name.includes("family")) tags.push("عائلة");
-
-    return [...new Set(tags)]; // Remove duplicates
-  }
-
-  findSimilarImages(
-    images: Array<{ id: string; analysis: ImageAnalysis }>,
-  ): Array<{ group: string[]; similarity: number }> {
-    const groups: Array<{ group: string[]; similarity: number }> = [];
-    const processed = new Set<string>();
-
-    for (let i = 0; i < images.length; i++) {
-      if (processed.has(images[i].id)) continue;
-
-      const currentGroup = [images[i].id];
-      const currentAnalysis = images[i].analysis;
-
-      for (let j = i + 1; j < images.length; j++) {
-        if (processed.has(images[j].id)) continue;
-
-        const similarity = this.calculateSimilarity(
-          currentAnalysis,
-          images[j].analysis,
-        );
-
-        if (similarity > 0.8) {
-          currentGroup.push(images[j].id);
-          processed.add(images[j].id);
-        }
+    for (const [expression, probability] of Object.entries(expressions)) {
+      if (typeof probability === "number" && probability > maxProbability) {
+        maxProbability = probability;
+        topExpression = expression;
       }
-
-      if (currentGroup.length > 1) {
-        groups.push({
-          group: currentGroup,
-          similarity: 0.85 + Math.random() * 0.1,
-        });
-      }
-
-      processed.add(images[i].id);
     }
 
-    return groups;
+    return expressionNames[topExpression] || "محايد";
   }
 
-  private calculateSimilarity(
-    analysis1: ImageAnalysis,
-    analysis2: ImageAnalysis,
-  ): number {
-    let similarity = 0;
+  // --- Public Methods ---
 
-    // Description similarity
-    const desc1Words = analysis1.description.toLowerCase().split(" ");
-    const desc2Words = analysis2.description.toLowerCase().split(" ");
-    const commonWords = desc1Words.filter((word) => desc2Words.includes(word));
-    similarity +=
-      (commonWords.length / Math.max(desc1Words.length, desc2Words.length)) *
-      0.4;
-
-    // Face count similarity
-    const faceDiff = Math.abs(analysis1.faces.length - analysis2.faces.length);
-    similarity += (1 - faceDiff / 10) * 0.3;
-
-    // Color similarity
-    const commonColors = analysis1.dominantColors.filter((color) =>
-      analysis2.dominantColors.includes(color),
-    );
-    similarity += (commonColors.length / 4) * 0.3;
-
-    return Math.min(similarity, 1);
+  getStatus() {
+    return {
+      isReady: this.isReady,
+      loadingProgress: this.loadingProgress,
+      modelsLoaded: {
+        classifier: !!this.models.classifier,
+        captioner: !!this.models.captioner,
+        objectDetector: !!this.models.objectDetector,
+        nsfw: !!this.models.nsfw,
+        ocr: !!this.models.ocr,
+        faceDetection: !!faceapi.nets.ssdMobilenetv1.isLoaded,
+      },
+    };
   }
 
-  async cleanup() {
-    if (this.tesseractWorker) {
-      await this.tesseractWorker.terminate();
-      this.tesseractWorker = null;
+  async terminate() {
+    if (this.models.ocr) {
+      await this.models.ocr.terminate();
     }
+    this.isReady = false;
+    this.models = {};
   }
 }
+
+// --- Default Settings ---
+export const defaultAiSettings: AiSettings = {
+  runClassifier: true,
+  runCaptioner: true,
+  runObjectDetection: false, // معطل افتراضياً للسرعة
+  runNsfw: true,
+  nsfwThreshold: 0.7,
+  runFaceDetection: true,
+  runOcr: true,
+  runDuplicateDetection: false,
+  runQualityAnalysis: true,
+  runColorPalette: true,
+};
 
 export const aiEngine = new AIEngine();
