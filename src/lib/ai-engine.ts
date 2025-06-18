@@ -332,65 +332,73 @@ class AIEngine {
       // تنفيذ كل مهمة ذكاء اصطناعي بناءً على إعدادات المستخدم
 
       // 1. التصنيف العام الدقيق
-      if (settings.runClassifier && this.models.classifier) {
-        try {
-          const candidateLabels = [
-            "person",
-            "people",
-            "selfie",
-            "portrait",
-            "group photo",
-            "car",
-            "vehicle",
-            "motorcycle",
-            "bicycle",
-            "truck",
-            "animal",
-            "dog",
-            "cat",
-            "bird",
-            "horse",
-            "wildlife",
-            "food",
-            "meal",
-            "restaurant",
-            "cooking",
-            "drink",
-            "nature",
-            "landscape",
-            "mountain",
-            "beach",
-            "forest",
-            "sunset",
-            "document",
-            "text",
-            "paper",
-            "book",
-            "certificate",
-            "screenshot",
-            "computer screen",
-            "mobile screen",
-            "building",
-            "architecture",
-            "house",
-            "street",
-            "sport",
-            "game",
-            "activity",
-            "exercise",
-            "art",
-            "painting",
-            "drawing",
-            "creative",
-          ];
-          const results = await this.models.classifier(
-            previewUrl,
-            candidateLabels,
+      if (settings.runClassifier) {
+        if (this.models.classifier && !this.models.classifierFailed) {
+          try {
+            const candidateLabels = [
+              "person",
+              "people",
+              "selfie",
+              "portrait",
+              "group photo",
+              "car",
+              "vehicle",
+              "motorcycle",
+              "bicycle",
+              "truck",
+              "animal",
+              "dog",
+              "cat",
+              "bird",
+              "horse",
+              "wildlife",
+              "food",
+              "meal",
+              "restaurant",
+              "cooking",
+              "drink",
+              "nature",
+              "landscape",
+              "mountain",
+              "beach",
+              "forest",
+              "sunset",
+              "document",
+              "text",
+              "paper",
+              "book",
+              "certificate",
+              "screenshot",
+              "computer screen",
+              "mobile screen",
+              "building",
+              "architecture",
+              "house",
+              "street",
+              "sport",
+              "game",
+              "activity",
+              "exercise",
+              "art",
+              "painting",
+              "drawing",
+              "creative",
+            ];
+            const results = await this.models.classifier(
+              previewUrl,
+              candidateLabels,
+            );
+            analysis.classification = results.slice(0, 5); // أفضل 5 تصنيفات
+          } catch (e) {
+            console.error("Classifier Error:", e);
+            analysis.error = `خطأ في التصنيف: ${e}`;
+          }
+        } else {
+          // استخدام تصنيف مبسط
+          analysis.classification = this.classifyImageSimple(
+            file,
+            imageElement,
           );
-          analysis.classification = results.slice(0, 5); // أفضل 5 تصنيفات
-        } catch (e) {
-          console.error("Classifier Error:", e);
-          analysis.error = `خطأ في التصنيف: ${e}`;
         }
       }
 
@@ -611,7 +619,7 @@ class AIEngine {
     const { width, height, data } = imageData;
     let sharpness = 0;
 
-    // Sobel operator للكشف عن الحواف
+    // Sobel operator للكشف عن الح��اف
     for (let y = 1; y < height - 1; y++) {
       for (let x = 1; x < width - 1; x++) {
         const i = (y * width + x) * 4;
@@ -713,7 +721,7 @@ class AIEngine {
       centroids.push([...randomPixel]);
     }
 
-    // تكرار للوصول للحل ا��أمثل
+    // تكرار للوصول للحل الأمثل
     for (let iteration = 0; iteration < 20; iteration++) {
       const clusters: [number, number, number][][] = Array(k)
         .fill(null)
@@ -740,7 +748,7 @@ class AIEngine {
         clusters[closestCentroid].push(pixel);
       }
 
-      // تحديث المراكز
+      // تحدي�� المراكز
       for (let j = 0; j < centroids.length; j++) {
         if (clusters[j].length > 0) {
           const avgR =
