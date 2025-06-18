@@ -217,7 +217,7 @@ async function analyzeImage(filePath, fileName, win, settings = {}) {
     // 4. OCR Text Extraction - تشغيل شرطي
     if (settings.runOcr !== false) {
       try {
-        const ocrResult = await ocrWorker.recognize(imageBuffer);
+        const ocrResult = await models.ocr.recognize(imageBuffer);
         results.text = ocrResult.data.text.trim();
       } catch (e) {
         results.errors.push(`OCR failed: ${e.message}`);
