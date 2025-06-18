@@ -74,7 +74,7 @@ async function initializeDirectories() {
     await fs.mkdir(APP_DIRS.logs, { recursive: true });
     await fs.mkdir(APP_DIRS.temp, { recursive: true });
 
-    console.log("✅ تم تهيئ�� جميع المجلدات بنجاح");
+    console.log("✅ تم تهيئة جميع المجلدات بنجاح");
     return true;
   } catch (error) {
     console.error("❌ خطأ في تهيئة المجلدات:", error);
@@ -82,78 +82,18 @@ async function initializeDirectories() {
   }
 }
 
-// --- Load AI Models ---
+// --- Load AI Models using New Engine ---
 async function loadAIModels(win) {
-  if (modelsLoaded) return true;
+  if (areModelsReady()) return true;
 
   try {
-    win.webContents.send(
-      "update-progress",
-      "بدء تحميل نماذج الذكاء الاصطناعي...",
-    );
+    // استخدام المحرك الجديد مع callback للتقدم
+    await initializeModels((message) => {
+      console.log(message);
+      win.webContents.send("update-progress", message);
+    });
 
-    // 1. Image Classification Model
-    win.webContents.send(
-      "update-progress",
-      "تحميل نموذج تصنيف الصور (CLIP)...",
-    );
-    classifier = await pipeline(
-      "zero-shot-image-classification",
-      "Xenova/clip-vit-base-patch32",
-    );
-
-    // 2. Image Captioning Model
-    win.webContents.send(
-      "update-progress",
-      "تحميل نموذج وصف الصور (Vision-GPT)...",
-    );
-    imageToTextGenerator = await pipeline(
-      "image-to-text",
-      "Xenova/vit-gpt2-image-captioning",
-    );
-
-    // 3. NSFW Detection Model
-    win.webContents.send(
-      "update-progress",
-      "تحميل نموذج كشف المحتوى الحساس...",
-    );
-    nsfwModel = await nsfw.load();
-
-    // 4. Face Detection Models
-    win.webContents.send("update-progress", "تحميل نماذج كشف الوجوه...");
-    const modelPath = path.join(
-      __dirname,
-      "node_modules",
-      "@vladmandic",
-      "face-api",
-      "model",
-    );
-    await faceapi.nets.ssdMobilenetv1.loadFromDisk(modelPath);
-    await faceapi.nets.faceLandmark68Net.loadFromDisk(modelPath);
-    await faceapi.nets.faceRecognitionNet.loadFromDisk(modelPath);
-    await faceapi.nets.ageGenderNet.loadFromDisk(modelPath);
-
-    // 5. OCR Worker
-    win.webContents.send(
-      "update-progress",
-      "تهيئة محرك التعرف على النصوص (OCR)...",
-    );
-    ocrWorker = await createWorker();
-    await ocrWorker.loadLanguage("eng+ara");
-    await ocrWorker.initialize("eng+ara");
-
-    // Setup TensorFlow.js environment for face-api
-    const tf = require("@tensorflow/tfjs-node");
-    const { Canvas, Image, ImageData } = require("canvas");
-    faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
-
-    modelsLoaded = true;
-    win.webContents.send(
-      "update-progress",
-      "🎉 جميع نماذج الذكاء الاصطناعي جاهزة للاستخدام!",
-    );
     win.webContents.send("models-loaded", true);
-
     return true;
   } catch (error) {
     console.error("❌ فشل تحميل النماذج:", error);
@@ -274,7 +214,7 @@ async function analyzeImage(filePath, fileName, win, settings = {}) {
       }
     }
 
-    // 4. OCR Text Extraction - تشغيل شرطي
+    // 4. OCR Text Extraction - تشغيل شرط��
     if (settings.runOcr !== false) {
       try {
         const ocrResult = await ocrWorker.recognize(imageBuffer);
