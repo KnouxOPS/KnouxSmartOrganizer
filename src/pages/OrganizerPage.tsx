@@ -425,6 +425,7 @@ export function OrganizerPage() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
+  const [usingFallback, setUsingFallback] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -572,7 +573,7 @@ export function OrganizerPage() {
             Knoux SmartOrganizer PRO
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
-            محرك الذكاء الاصطناعي المتقدم مع 10 قدرات قوية
+            محرك الذكاء الاصطنا��ي المتقدم مع 10 قدرات قوية
           </p>
 
           {/* شريط الحالة */}
