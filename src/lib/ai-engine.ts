@@ -161,23 +161,40 @@ class AIEngine {
           (loadedModels / totalModels) * 90,
         );
         try {
-          // تحميل النماذج من المجلد المحلي أو CDN
-          const modelPath = "/models/face-api/";
-          await faceapi.nets.ssdMobilenetv1.loadFromUri(modelPath);
-          await faceapi.nets.ageGenderNet.loadFromUri(modelPath);
-          await faceapi.nets.faceExpressionNet.loadFromUri(modelPath);
-          await faceapi.nets.faceLandmark68Net.loadFromUri(modelPath);
-        } catch (error) {
-          console.warn(
-            "فشل تحميل نماذج Face-API من المجلد المحلي، محاولة التحميل من CDN...",
-          );
-          // Fallback: محاولة التحميل من CDN
+          // استخدام CDN مباشرة لضمان التوافق
           const cdnPath =
             "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.13/model/";
+
+          progressCallback(
+            "👤 تحميل نموذج كشف الوجوه الأساسي...",
+            (loadedModels / totalModels) * 90,
+          );
           await faceapi.nets.ssdMobilenetv1.loadFromUri(cdnPath);
+
+          progressCallback(
+            "👤 تحميل نموذج تحليل العمر والجنس...",
+            (loadedModels / totalModels) * 90,
+          );
           await faceapi.nets.ageGenderNet.loadFromUri(cdnPath);
+
+          progressCallback(
+            "👤 تحميل نموذج تحليل المشاعر...",
+            (loadedModels / totalModels) * 90,
+          );
           await faceapi.nets.faceExpressionNet.loadFromUri(cdnPath);
+
+          progressCallback(
+            "👤 تحميل نموذج النقاط المرجعية...",
+            (loadedModels / totalModels) * 90,
+          );
           await faceapi.nets.faceLandmark68Net.loadFromUri(cdnPath);
+        } catch (error) {
+          console.warn(
+            "فشل تحميل نماذج Face-API، سيتم تعطيل كشف الوجوه:",
+            error,
+          );
+          // في حالة الفشل، نعطل كشف الوجوه لهذه الجلسة
+          this.models.faceDetectionFailed = true;
         }
         loadedModels++;
         progressCallback(
