@@ -20,7 +20,7 @@ export interface AiSettings {
   runColorPalette: boolean;
 }
 
-// --- واجهة البيانات التفصيلية لكل صورة ---
+// --- واجهة البيانات التفصيلية لكل صو��ة ---
 export interface ImageAnalysis {
   id: string;
   file: File;
@@ -349,21 +349,31 @@ class AIEngine {
       }
 
       // 5. كشف وتحليل الوجوه المتقدم
-      if (settings.runFaceDetection) {
+      if (settings.runFaceDetection && !this.models.faceDetectionFailed) {
         try {
-          const detections = await faceapi
-            .detectAllFaces(imageElement)
-            .withAgeAndGender()
-            .withFaceExpressions()
-            .withFaceLandmarks();
+          // التحقق من تحميل النماذج المطلوبة
+          if (
+            faceapi.nets.ssdMobilenetv1.isLoaded &&
+            faceapi.nets.ageGenderNet.isLoaded &&
+            faceapi.nets.faceExpressionNet.isLoaded
+          ) {
+            const detections = await faceapi
+              .detectAllFaces(imageElement)
+              .withAgeAndGender()
+              .withFaceExpressions()
+              .withFaceLandmarks();
 
-          analysis.faces = detections.map((d: any) => ({
-            age: Math.round(d.age || 25),
-            gender: d.gender || "unknown",
-            expression: this.getTopExpression(d.expressions),
-            confidence: d.detection?.score || 0.5,
-            box: d.detection?.box || {},
-          }));
+            analysis.faces = detections.map((d: any) => ({
+              age: Math.round(d.age || 25),
+              gender: d.gender || "unknown",
+              expression: this.getTopExpression(d.expressions),
+              confidence: d.detection?.score || 0.5,
+              box: d.detection?.box || {},
+            }));
+          } else {
+            console.warn("نماذج كشف الوجوه غير محملة بالكامل");
+            analysis.error = "نماذج كشف الوجوه غير متوفرة";
+          }
         } catch (e) {
           console.error("Face API Error:", e);
           analysis.error = `خطأ في كشف الوجوه: ${e}`;
