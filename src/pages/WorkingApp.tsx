@@ -451,7 +451,7 @@ export default function WorkingApp() {
       // فلترة المعالجة
       if (showProcessedOnly && !img.processed) return false;
 
-      // فلترة الثقة
+      // ��لترة الثقة
       if (img.analysis) {
         const confidence = img.analysis.confidence * 100;
         if (confidence < minConfidence[0]) return false;
@@ -540,7 +540,7 @@ export default function WorkingApp() {
               <Upload className="w-12 h-12 text-white" />
             </div>
             <h3 className="text-2xl font-bold text-blue-600 mb-2">
-              اسحب الملفات هنا
+              اسحب ا��ملفات هنا
             </h3>
             <p className="text-blue-500">سيتم رفع ومعالجة الصور تلقائياً</p>
           </div>
@@ -680,53 +680,82 @@ export default function WorkingApp() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* الشريط الجانبي */}
           <div className="lg:col-span-3 space-y-6">
-            {/* رفع الملفات */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Upload className="w-5 h-5 mr-2" />
-                  رفع الصور - يعمل!
+            {/* منطقة رفع الصور المحسنة */}
+            <Card className="border-2 border-dashed border-gray-300 hover:border-blue-400 transition-all duration-300">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-blue-100 rounded-lg mr-2">
+                      <Upload className="w-5 h-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="text-lg font-semibold">رفع الصور</div>
+                      <div className="text-xs text-gray-500">
+                        سحب وإفلات أو تحديد
+                      </div>
+                    </div>
+                  </div>
+                  <Badge className="bg-green-100 text-green-700">✓ يعمل</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <Button
                     onClick={selectFiles}
                     variant="outline"
-                    className="flex flex-col h-20 p-2"
+                    className="flex flex-col h-24 p-3 border-2 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200"
                     disabled={isProcessing}
                   >
-                    <FileImage className="w-6 h-6 mb-1" />
-                    <span className="text-xs">ملفات</span>
+                    <FileImage className="w-8 h-8 mb-2 text-blue-600" />
+                    <span className="text-sm font-medium">اختر ملفات</span>
+                    <span className="text-xs text-gray-500">صور متعددة</span>
                   </Button>
 
                   <Button
                     onClick={selectFolder}
                     variant="outline"
-                    className="flex flex-col h-20 p-2"
+                    className="flex flex-col h-24 p-3 border-2 hover:border-purple-400 hover:bg-purple-50 transition-all duration-200"
                     disabled={isProcessing}
                   >
-                    <FolderOpen className="w-6 h-6 mb-1" />
-                    <span className="text-xs">مجلد</span>
+                    <FolderOpen className="w-8 h-8 mb-2 text-purple-600" />
+                    <span className="text-sm font-medium">اختر مجلد</span>
+                    <span className="text-xs text-gray-500">مجلد كامل</span>
                   </Button>
                 </div>
 
                 <div
                   className={cn(
-                    "border-2 border-dashed rounded-lg p-6 text-center transition-all duration-300 cursor-pointer",
+                    "border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 cursor-pointer",
                     dragActive
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-300 hover:border-blue-400",
+                      ? "border-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 scale-105"
+                      : "border-gray-300 hover:border-blue-400 hover:bg-gray-50",
+                    isProcessing && "pointer-events-none opacity-50",
                   )}
                   onClick={selectFiles}
                 >
-                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-600">
-                    انقر هنا أو اسحب الملفات
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    JPG, PNG, GIF, WEBP
-                  </p>
+                  <motion.div
+                    animate={dragActive ? { scale: 1.1 } : { scale: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mb-4">
+                      <Upload className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                      {dragActive ? "اتركها هنا!" : "اسحب الصور هنا"}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      أو انقر للتصفح واختيار الملفات
+                    </p>
+                    <div className="flex items-center justify-center space-x-4 text-xs text-gray-500">
+                      <span>JPG</span>
+                      <span>•</span>
+                      <span>PNG</span>
+                      <span>•</span>
+                      <span>GIF</span>
+                      <span>•</span>
+                      <span>WEBP</span>
+                    </div>
+                  </motion.div>
                 </div>
 
                 <input
