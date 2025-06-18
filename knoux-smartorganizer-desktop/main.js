@@ -260,7 +260,7 @@ async function analyzeImage(filePath, fileName, win, settings = {}) {
         "activity",
       ];
 
-      const classificationResult = await classifier(rawImage, candidateLabels);
+      const classificationResult = await models.classifier(rawImage, candidateLabels);
       results.classification = classificationResult[0].label;
       results.confidence = classificationResult[0].score;
     } catch (e) {
@@ -319,7 +319,7 @@ async function analyzeImage(filePath, fileName, win, settings = {}) {
 async function organizeImages(win) {
   if (isProcessing) {
     win.webContents.send("update-progress", "عملية أخرى قيد التنفيذ...");
-    return { success: false, message: "عملية أخرى قيد التنفيذ" };
+    return { success: false, message: "عملية أخر�� قيد التنفيذ" };
   }
 
   isProcessing = true;
