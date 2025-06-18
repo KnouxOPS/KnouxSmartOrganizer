@@ -439,13 +439,20 @@ class AIEngine {
       }
 
       // 4. كشف المحتوى الحساس
-      if (settings.runNsfw && this.models.nsfw) {
-        try {
-          const predictions = await this.models.nsfw.classify(imageElement);
-          analysis.nsfw = predictions.filter((p: any) => p.probability > 0.01); // إظهار النتائج ذات الصلة
-        } catch (e) {
-          console.error("NSFW Error:", e);
-          analysis.error = `خطأ في كشف المحتوى: ${e}`;
+      if (settings.runNsfw) {
+        if (this.models.nsfw && !this.models.nsfwFailed) {
+          try {
+            const predictions = await this.models.nsfw.classify(imageElement);
+            analysis.nsfw = predictions.filter(
+              (p: any) => p.probability > 0.01,
+            );
+          } catch (e) {
+            console.error("NSFW Error:", e);
+            analysis.error = `خطأ في كشف المحتوى: ${e}`;
+          }
+        } else {
+          // استخدام تحليل مبسط آمن
+          analysis.nsfw = this.generateSimpleNSFWAnalysis();
         }
       }
 
