@@ -322,6 +322,12 @@ async function organizeImages(win) {
     return { success: false, message: "عملية أخرى قيد التنفيذ" };
   }
 
+  // التحقق من جاهزية النماذج أولاً
+  if (!areModelsReady()) {
+    win.webContents.send("update-progress", "❌ النماذج غير جاهزة بعد. الرجاء الانتظار حتى يكتمل التحميل.");
+    return { success: false, message: "النماذج غير جاهزة بعد" };
+  }
+
   isProcessing = true;
 
   // جلب الإعدادات الحديثة
