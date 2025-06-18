@@ -359,7 +359,7 @@ export default function WorkingApp() {
           `تم تحليل ${targetImages.length} صورة بنجاح`,
         );
 
-        // تنظيم تلقائي بعد الم��الجة
+        // تنظيم تلقائي بعد المعالجة
         if (autoOrganizeEnabled) {
           autoOrganizeImages();
         }
@@ -1201,7 +1201,7 @@ export default function WorkingApp() {
                   {/* معلومات النتائج */}
                   <div className="flex items-center justify-between text-sm text-gray-600">
                     <span>
-                      عرض {filteredAndSortedImages.length} من {images.length} صورة
+                      عرض {filteredAndSortedImages.length} ��ن {images.length} صورة
                       {filterCategory !== "all" && ` • ${filterCategory}`}
                       {searchQuery && ` • البحث: "${searchQuery}"`}
                     </span>
@@ -1357,10 +1357,9 @@ export default function WorkingApp() {
                   </Card>
                 )}
               </div>
-            ) : viewMode !== "folders" && (
-
-            {/* معرض الصور المنظم */}
-            filteredAndSortedImages.length > 0 ? (
+            ) : (
+              /* معرض الصور المنظم */
+              filteredAndSortedImages.length > 0 ? (
               <div className="space-y-6">
                 {/* شريط الحالة */}
                 <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
