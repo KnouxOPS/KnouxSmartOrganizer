@@ -78,7 +78,7 @@ interface ProcessingStep {
   progress: number;
 }
 
-import { realAIEngine } from "@/lib/real-ai-engine";
+import { enhancedAIEngine } from "@/lib/enhanced-ai-engine";
 
 export default function WorkingApp() {
   // حالات التطبيق
