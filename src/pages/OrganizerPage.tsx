@@ -429,7 +429,7 @@ export function OrganizerPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // تهيئة المحرك
+  // تهيئة المحرك مع البديل المبسط
   const initializeEngine = useCallback(async () => {
     if (isInitialized || isProcessing) return;
 
@@ -437,6 +437,7 @@ export function OrganizerPage() {
     setStatus("جاري تهيئة محرك الذكاء الاصطناعي...");
 
     try {
+      // محاولة تحميل المحرك المتقدم
       await aiEngine.initialize(settings, (statusMsg, prog) => {
         setStatus(statusMsg);
         setProgress(prog);
@@ -444,9 +445,10 @@ export function OrganizerPage() {
 
       setIsInitialized(true);
       setIsProcessing(false);
-      setStatus("✅ المحرك جاهز! يمكنك الآن اختيار الصور للتحليل.");
+      setUsingFallback(false);
+      setStatus("✅ المحرك المتقدم جاهز! جميع الـ 10 قدرات متاحة.");
 
-      toast.success("تم تحميل جميع النماذج بنجاح!");
+      toast.success("تم تحميل جميع النماذج المتقدمة بنجاح!");
 
       // احتفال بالتحميل الناجح
       confetti({
@@ -456,9 +458,29 @@ export function OrganizerPage() {
         colors: ["#4F46E5", "#7C3AED", "#EC4899"],
       });
     } catch (error) {
-      setIsProcessing(false);
-      setStatus(`❌ فشل في تهيئة المحرك: ${error}`);
-      toast.error("فشل في تحميل النماذج. تحقق من الاتصال.");
+      console.warn("فشل المحرك المتقدم، التحول للمحرك المبسط:", error);
+
+      // التحول للمحرك المبسط
+      setStatus("🔄 التحول للمحرك المبسط السريع...");
+      setProgress(50);
+
+      setTimeout(() => {
+        setIsInitialized(true);
+        setIsProcessing(false);
+        setUsingFallback(true);
+        setProgress(100);
+        setStatus("✅ المحرك المبسط جاهز! تحليل سريع وموثوق.");
+
+        toast.info("تم التحول للمحرك المبسط - يعمل بدون اتصال!");
+
+        // احتفال مبسط
+        confetti({
+          particleCount: 50,
+          spread: 50,
+          origin: { y: 0.7 },
+          colors: ["#10B981", "#3B82F6"],
+        });
+      }, 1000);
     }
   }, [settings, isInitialized, isProcessing]);
 
@@ -573,7 +595,7 @@ export function OrganizerPage() {
             Knoux SmartOrganizer PRO
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300 mb-4">
-            محرك الذكاء الاصطنا��ي المتقدم مع 10 قدرات قوية
+            محرك الذكاء الاصطناعي المتقدم مع 10 قدرات قوية
           </p>
 
           {/* شريط الحالة */}
