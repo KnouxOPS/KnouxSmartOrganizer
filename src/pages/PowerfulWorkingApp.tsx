@@ -247,7 +247,7 @@ export default function PowerfulWorkingApp() {
       },
       {
         id: "ai-classification",
-        name: "🎯 ��صنيف الصور",
+        name: "🎯 تصنيف الصور",
         description: "تحليل ذكي لمحتوى الصور",
         status: "pending",
         progress: 0,
@@ -433,8 +433,9 @@ export default function PowerfulWorkingApp() {
           );
 
           try {
-            // المعالجة الشاملة بالمحرك القوي
-            const processedImage = await powerfulAI.processImage(
+            // المعالجة الشاملة بالمحرك المناسب
+            const activeAI = usingSimpleAI ? simpleAI : powerfulAI;
+            const processedImage = await activeAI.processImage(
               image.file,
               aiSettings,
             );
@@ -464,7 +465,7 @@ export default function PowerfulWorkingApp() {
               ),
             );
 
-            // إشعار لكل صورة تتم معالجتها
+            // إشعار لكل ��ورة تتم معالجتها
             if (processedImage.errors.length === 0) {
               addNotification(
                 "success",
