@@ -329,17 +329,24 @@ class PowerfulAIEngine {
         const predictions = await this.models.classifier.classify(img);
         const bestPrediction = predictions[0];
 
-        if (bestPrediction.probability >= minConfidence) {
+        if (bestPrediction && bestPrediction.probability >= minConfidence) {
           result.classification = this.translateClassification(
             bestPrediction.className,
           );
           result.confidence = bestPrediction.probability;
+        } else {
+          result.classification = "صورة عامة";
+          result.confidence = minConfidence;
         }
-      } else {
+      } else if (this.models.classifier?.analyze) {
         // Fallback classifier
         const classification = await this.models.classifier.analyze(img);
         result.classification = classification.label;
         result.confidence = classification.confidence;
+      } else {
+        // Default classification
+        result.classification = "صورة";
+        result.confidence = 0.5;
       }
     } catch (error) {
       result.errors.push(`فشل التصنيف: ${error}`);
@@ -428,7 +435,7 @@ class PowerfulAIEngine {
       const colors = this.models.colorAnalyzer.extractDominantColors(img, 5);
       result.colors = colors;
     } catch (error) {
-      result.errors.push(`فشل تحليل الألوان: ${error}`);
+      result.errors.push(`فشل تحليل الأل��ان: ${error}`);
     }
   }
 
