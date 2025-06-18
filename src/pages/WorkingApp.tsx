@@ -85,6 +85,14 @@ export default function WorkingApp() {
   const [theme, setTheme] = useState("light");
   const [dragActive, setDragActive] = useState(false);
 
+  // إعدادات المحرك القوي الجديد
+  const [aiSettings, setAiSettings] =
+    useState<AIEngineSettings>(defaultSettings);
+  const [aiInitialized, setAiInitialized] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiProgress, setAiProgress] = useState(0);
+  const [aiStatus, setAiStatus] = useState("");
+
   // ميزات متقدمة
   const [virtualFolders, setVirtualFolders] = useState<
     Record<string, string[]>
@@ -1453,7 +1461,7 @@ export default function WorkingApp() {
                   </Card>
                 )}
               </div>
-            ) : /* معرض الصور المنظم */
+            ) : /* معرض الصور ال��نظم */
             filteredAndSortedImages.length > 0 ? (
               <div className="space-y-6">
                 {/* شريط الحالة */}
