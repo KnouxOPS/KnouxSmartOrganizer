@@ -49,27 +49,6 @@ import {
   Loader2,
 } from "lucide-react";
 
-interface ProcessedImage {
-  id: string;
-  name: string;
-  url: string;
-  size: number;
-  file: File;
-  processed: boolean;
-  analysis?: {
-    description: string;
-    confidence: number;
-    faces: Array<{ confidence: number; age?: number; gender?: string }>;
-    text: { text: string; confidence: number };
-    isNSFW: boolean;
-    nsfwScore: number;
-    dominantColors: string[];
-  };
-  tags: string[];
-  category?: string;
-  createdAt: Date;
-}
-
 interface ProcessingStep {
   id: string;
   name: string;
@@ -78,7 +57,12 @@ interface ProcessingStep {
   progress: number;
 }
 
-import { enhancedAIEngine } from "@/lib/enhanced-ai-engine";
+import {
+  powerfulAI,
+  defaultSettings,
+  type ProcessedImage,
+  type AIEngineSettings,
+} from "@/lib/powerful-ai-engine";
 
 export default function WorkingApp() {
   // حالات التطبيق
