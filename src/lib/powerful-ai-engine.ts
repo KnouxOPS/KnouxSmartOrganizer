@@ -1,5 +1,5 @@
 /**
- * Knoux SmartOrganizer PRO - محرك الذكاء الا��طناعي القوي
+ * Knoux SmartOrganizer PRO - محرك الذكاء الاصطناعي القوي
  * يحتوي على جميع النماذج الحقيقية والقوية للتطبيق الرئيسي
  */
 
@@ -248,13 +248,21 @@ class PowerfulAIEngine {
    */
   private async loadFaceDetector(): Promise<void> {
     try {
-      // استخدام MediaPipe Face Detection
-      const faceDetection = await import("@mediapipe/face_detection");
-      this.models.faceDetector = new faceDetection.FaceDetection({
-        model: "short_range",
-      });
+      // محاولة استخدام MediaPipe Face Detection
+      const faceDetection = await import("@mediapipe/face_detection").catch(
+        () => null,
+      );
+
+      if (faceDetection && typeof window !== "undefined") {
+        this.models.faceDetector = new faceDetection.FaceDetection({
+          model: "short_range",
+        });
+        return;
+      }
+
+      throw new Error("MediaPipe not available");
     } catch (error) {
-      // Fallback إلى Face API مخصص
+      console.warn("Using fallback face detector:", error);
       this.models.faceDetector = new SimpleFaceDetector();
     }
   }
