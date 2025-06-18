@@ -146,15 +146,16 @@ export default function PowerfulWorkingApp() {
     [],
   );
 
-  // تهيئة محرك الذكاء الاصطناعي القوي
+  // تهيئة محرك الذكاء الاصطناعي مع نسخة احتياطية
   useEffect(() => {
     const initializeAI = async () => {
       if (aiInitialized || aiLoading) return;
 
       setAiLoading(true);
-      setAiStatus("🚀 بدء تحميل محرك الذكاء الاصطناعي القوي...");
+      setAiStatus("🚀 بدء تحميل محرك الذكاء الاصطناعي...");
 
       try {
+        // محاولة تحميل المحرك القوي أولاً
         await powerfulAI.initialize((message, progress) => {
           setAiStatus(message);
           setAiProgress(progress);
@@ -162,17 +163,18 @@ export default function PowerfulWorkingApp() {
 
         setAiInitialized(true);
         setAiLoading(false);
-        setAiStatus("✅ المحرك جاهز للاستخدام!");
+        setAiStatus("✅ المحرك المتقدم جاهز!");
+        setUsingSimpleAI(false);
 
         addNotification(
           "success",
-          "🤖 محرك الذكاء الاصطناعي جاهز",
-          "جميع النماذج تم تحميلها بنجاح - يمكنك الآن رفع الصور",
+          "🤖 محرك الذكاء الاصطناعي المتقدم جاهز",
+          "جميع النماذج المتقدمة تم تحميلها بنجاح",
         );
 
         // عرض تفاصيل النماذج المحملة
         const status = powerfulAI.getStatus();
-        console.log("🔍 حالة النماذج:", status);
+        console.log("🔍 حالة النماذج المتقدمة:", status);
 
         // احتفال بالتحميل الناجح
         confetti({
@@ -182,13 +184,44 @@ export default function PowerfulWorkingApp() {
           colors: ["#4F46E5", "#7C3AED", "#EC4899"],
         });
       } catch (error) {
-        setAiLoading(false);
-        setAiStatus(`❌ خطأ في التحميل: ${error}`);
-        addNotification(
-          "error",
-          "فشل تحميل المحرك",
-          "تحقق من الاتصال وأعد تحميل الصفحة",
-        );
+        console.warn("فشل المحرك المتقدم، التحول للنسخة المبسطة:", error);
+
+        // التحول للمحرك المبسط
+        try {
+          setAiStatus("🔄 التحول للمحرك المبسط السريع...");
+
+          await simpleAI.initialize((message, progress) => {
+            setAiStatus(message);
+            setAiProgress(progress);
+          });
+
+          setAiInitialized(true);
+          setAiLoading(false);
+          setAiStatus("✅ المحرك المبسط جاهز!");
+          setUsingSimpleAI(true);
+
+          addNotification(
+            "info",
+            "🔧 تم التحول للمحرك المبسط",
+            "محرك سريع وموثوق - يعمل بدون مكتبات خارجية",
+          );
+
+          // احتفال مبسط
+          confetti({
+            particleCount: 50,
+            spread: 50,
+            origin: { y: 0.7 },
+            colors: ["#10B981", "#3B82F6"],
+          });
+        } catch (simpleError) {
+          setAiLoading(false);
+          setAiStatus(`❌ فشل في تحميل أي محرك: ${simpleError}`);
+          addNotification(
+            "error",
+            "فشل تحميل المحرك",
+            "أعد تحميل الصفحة أو تحقق من المتصفح",
+          );
+        }
       }
     };
 
@@ -214,7 +247,7 @@ export default function PowerfulWorkingApp() {
       },
       {
         id: "ai-classification",
-        name: "🎯 تصنيف الصور",
+        name: "🎯 ��صنيف الصور",
         description: "تحليل ذكي لمحتوى الصور",
         status: "pending",
         progress: 0,
@@ -242,7 +275,7 @@ export default function PowerfulWorkingApp() {
       },
       {
         id: "completion",
-        name: "✅ ال��نتهاء",
+        name: "✅ الانتهاء",
         description: "تم الانتهاء من المعالجة الشاملة",
         status: "pending",
         progress: 0,
@@ -590,7 +623,7 @@ export default function PowerfulWorkingApp() {
       if (showProcessedOnly && img.classification === "جاري المعالجة...")
         return false;
 
-      // ��لترة الثقة
+      // فلترة الثقة
       const confidence = img.confidence * 100;
       if (confidence < minConfidence[0]) return false;
 
