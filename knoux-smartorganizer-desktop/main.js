@@ -172,7 +172,7 @@ async function analyzeImage(filePath, fileName, win, settings = {}) {
       try {
         const tf = require("@tensorflow/tfjs-node");
         const tensor = tf.node.decodeImage(imageBuffer, 3);
-        const predictions = await nsfwModel.classify(tensor);
+        const predictions = await models.nsfw.classify(tensor);
         tensor.dispose();
 
         const nsfwClasses = ["Porn", "Hentai"];
@@ -214,7 +214,7 @@ async function analyzeImage(filePath, fileName, win, settings = {}) {
       }
     }
 
-    // 4. OCR Text Extraction - تشغيل شرط��
+    // 4. OCR Text Extraction - تشغيل شرطي
     if (settings.runOcr !== false) {
       try {
         const ocrResult = await ocrWorker.recognize(imageBuffer);
