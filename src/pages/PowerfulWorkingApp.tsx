@@ -55,10 +55,15 @@ import {
 
 import {
   powerfulAI,
-  defaultSettings,
+  defaultSettings as powerfulSettings,
   type ProcessedImage,
   type AIEngineSettings,
 } from "@/lib/powerful-ai-engine";
+
+import {
+  simpleAI,
+  defaultSettings as simpleSettings,
+} from "@/lib/simple-ai-engine";
 
 interface ProcessingStep {
   id: string;
@@ -621,9 +626,8 @@ export default function PowerfulWorkingApp() {
   // إحصائيات متقدمة
   const statistics = {
     total: images.length,
-    processed: images.filter(
-      (img) => img.classification !== "جاري المعا��جة...",
-    ).length,
+    processed: images.filter((img) => img.classification !== "جاري المعالجة...")
+      .length,
     faces: images.reduce((sum, img) => sum + img.faces.length, 0),
     withText: images.filter((img) => img.text.length > 0).length,
     nsfw: images.filter((img) => img.isNSFW).length,
@@ -771,7 +775,7 @@ export default function PowerfulWorkingApp() {
                       className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
                     >
                       <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                      تح��يل AI
+                      تحميل AI
                     </Badge>
                   ) : (
                     <Badge variant="destructive">
