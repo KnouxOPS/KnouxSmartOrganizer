@@ -248,7 +248,7 @@ class AIEngine {
           );
           this.models.ocr = await createWorker("eng+ara");
           progressCallback(
-            "✅ تم تهيئة قارئ ال��صوص",
+            "✅ تم تهيئة قارئ النصوص",
             (loadedModels / totalModels) * 90,
           );
         } catch (error) {
@@ -438,7 +438,7 @@ class AIEngine {
         }
       }
 
-      // 4. كشف المحت��ى الحساس
+      // 4. كشف المحتوى الحساس
       if (settings.runNsfw) {
         if (this.models.nsfw && !this.models.nsfwFailed) {
           try {
@@ -489,15 +489,20 @@ class AIEngine {
       }
 
       // 6. استخراج النصوص (OCR)
-      if (settings.runOcr && this.models.ocr) {
-        try {
-          const {
-            data: { text },
-          } = await this.models.ocr.recognize(file);
-          analysis.ocrText = text.trim();
-        } catch (e) {
-          console.error("OCR Error:", e);
-          analysis.error = `خطأ في قراءة النصوص: ${e}`;
+      if (settings.runOcr) {
+        if (this.models.ocr && !this.models.ocrFailed) {
+          try {
+            const {
+              data: { text },
+            } = await this.models.ocr.recognize(file);
+            analysis.ocrText = text.trim();
+          } catch (e) {
+            console.error("OCR Error:", e);
+            analysis.error = `خطأ في قراءة النصوص: ${e}`;
+          }
+        } else {
+          // استخدام محاكاة OCR
+          analysis.ocrText = this.generateSimpleOCR(file);
         }
       }
 
@@ -554,7 +559,7 @@ class AIEngine {
     const imageData = ctx.getImageData(0, 0, 32, 32);
     let hash = "";
 
-    // حس��ب متوسط السطوع
+    // حساب متوسط السطوع
     let total = 0;
     for (let i = 0; i < imageData.data.length; i += 4) {
       const r = imageData.data[i];
