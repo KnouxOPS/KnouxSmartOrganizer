@@ -262,8 +262,47 @@ class AIEngine {
         loadedModels++;
       }
 
+      // تحديد ما إذا كان هناك نماذج محملة بنجاح
+      const successfulModels = [];
+      const failedModels = [];
+
+      if (settings.runClassifier) {
+        if (this.models.classifier) successfulModels.push("التصنيف");
+        else failedModels.push("التصنيف");
+      }
+      if (settings.runCaptioner) {
+        if (this.models.captioner) successfulModels.push("الوصف");
+        else failedModels.push("الوصف");
+      }
+      if (settings.runObjectDetection) {
+        if (this.models.objectDetector) successfulModels.push("كشف الأجسام");
+        else failedModels.push("كشف الأجسام");
+      }
+      if (settings.runNsfw) {
+        if (this.models.nsfw) successfulModels.push("NSFW");
+        else failedModels.push("NSFW");
+      }
+      if (settings.runFaceDetection) {
+        if (!this.models.faceDetectionFailed)
+          successfulModels.push("كشف الوجوه");
+        else failedModels.push("كشف الوجوه");
+      }
+      if (settings.runOcr) {
+        if (this.models.ocr) successfulModels.push("OCR");
+        else failedModels.push("OCR");
+      }
+
       this.isReady = true;
-      progressCallback("🎉 جميع النماذج المطلوبة جاهزة للاستخدام!", 100);
+
+      if (successfulModels.length > 0) {
+        progressCallback(
+          `✅ تم تحميل: ${successfulModels.join("، ")}${failedModels.length > 0 ? ` | ⚠️ فشل: ${failedModels.join("، ")}` : ""}`,
+          100,
+        );
+      } else {
+        // إذا فشلت جميع النماذج، اعتبرها فشل كامل
+        throw new Error("فشل تحميل جميع النماذج المطلوبة");
+      }
     } catch (error) {
       console.error("خطأ في تهيئة النماذج:", error);
       progressCallback(`❌ خطأ في تحميل النماذج: ${error}`, 0);
@@ -674,7 +713,7 @@ class AIEngine {
       centroids.push([...randomPixel]);
     }
 
-    // تكرار للوصول للحل الأمثل
+    // تكرار للوصول للحل ا��أمثل
     for (let iteration = 0; iteration < 20; iteration++) {
       const clusters: [number, number, number][][] = Array(k)
         .fill(null)
