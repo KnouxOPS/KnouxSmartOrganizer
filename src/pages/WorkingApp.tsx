@@ -538,7 +538,13 @@ export default function WorkingApp() {
       }
     });
 
-    return filtered;
+    // إزالة أي تكرارات محتملة بناءً على ID
+    const uniqueFiltered = filtered.filter(
+      (img, index, arr) =>
+        arr.findIndex((item) => item.id === img.id) === index,
+    );
+
+    return uniqueFiltered;
   }, [
     images,
     searchQuery,
