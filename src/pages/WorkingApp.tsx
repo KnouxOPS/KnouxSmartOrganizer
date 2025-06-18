@@ -61,7 +61,7 @@ import {
   powerfulAI,
   defaultSettings,
   type ProcessedImage,
-  type AIEngineSettings,
+  type AIEngineSettings
 } from "@/lib/powerful-ai-engine";
 
 export default function WorkingApp() {
@@ -86,17 +86,14 @@ export default function WorkingApp() {
   const [dragActive, setDragActive] = useState(false);
 
   // إعدادات المحرك القوي الجديد
-  const [aiSettings, setAiSettings] =
-    useState<AIEngineSettings>(defaultSettings);
+  const [aiSettings, setAiSettings] = useState<AIEngineSettings>(defaultSettings);
   const [aiInitialized, setAiInitialized] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiProgress, setAiProgress] = useState(0);
   const [aiStatus, setAiStatus] = useState("");
 
   // ميزات متقدمة
-  const [virtualFolders, setVirtualFolders] = useState<
-    Record<string, string[]>
-  >({});
+  const [virtualFolders, setVirtualFolders] = useState<Record<string, string[]>>({});
   const [duplicateGroups, setDuplicateGroups] = useState<any[]>([]);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [showDuplicatesPanel, setShowDuplicatesPanel] = useState(false);
@@ -284,22 +281,23 @@ export default function WorkingApp() {
           ),
         );
 
-        // معالجة كل صورة
+        // معالجة كل صورة بالمحرك القوي الجديد
         for (let i = 0; i < targetImages.length; i++) {
           const image = targetImages[i];
           setCurrentFile(image.name);
 
-          // تحليل الذكاء الاصطناعي المتطور
-          const analysis = await enhancedAIEngine.analyzeImage(image.file);
+          try {
+            // تحليل شامل بالذكاء الاصطناعي القوي
+            const processedImage = await powerfulAI.processImage(image.file, aiSettings);
 
-          // تحديث الصورة
-          setImages((prev) =>
-            prev.map((img) =>
-              img.id === image.id
-                ? {
-                    ...img,
-                    processed: true,
-                    analysis,
+            // تحديث الصورة مع النتا��ج الجديدة
+            setImages((prev) =>
+              prev.map((img) =>
+                img.id === image.id
+                  ? {
+                      ...processedImage,
+                      id: img.id, // الحفاظ على ID الأصلي
+                      processed: true,
                     category: analysis.category,
                     tags: analysis.tags,
                   }
@@ -371,7 +369,7 @@ export default function WorkingApp() {
         addNotification(
           "error",
           "خطأ في المعالجة",
-          "حدث خطأ أثناء معالجة الصور",
+          "حدث خطأ أث��اء معالجة الصور",
         );
       }
     },
@@ -380,37 +378,27 @@ export default function WorkingApp() {
 
   // التنظيم التلقائي
   const autoOrganizeImages = useCallback(() => {
-    const processedImages = images.filter(
-      (img) => img.processed && img.analysis,
-    );
+    const processedImages = images.filter(img => img.processed && img.analysis);
     const structure = enhancedAIEngine.generateSmartFolderStructure(
-      processedImages.map((img) => ({
+      processedImages.map(img => ({
         id: img.id,
         analysis: img.analysis!,
-        name: img.name,
-      })),
+        name: img.name
+      }))
     );
 
     setVirtualFolders(structure);
-    addNotification(
-      "success",
-      "تم التنظيم التلقائي",
-      `تم إنشاء ${Object.keys(structure).length} مجلد ذكي`,
-    );
+    addNotification("success", "تم التنظيم التلقائي", `تم إنشاء ${Object.keys(structure).length} مجلد ذكي`);
   }, [images, addNotification]);
 
   // كشف المتكررات
   const detectDuplicates = useCallback(() => {
-    const imageIds = images.map((img) => img.id);
+    const imageIds = images.map(img => img.id);
     const duplicates = enhancedAIEngine.findDuplicates(imageIds);
 
     setDuplicateGroups(duplicates);
     if (duplicates.length > 0) {
-      addNotification(
-        "info",
-        "تم العثور على صور متكررة",
-        `${duplicates.length} مجموعة من الصور المتشابهة`,
-      );
+      addNotification("info", "تم العثور على صور متكررة", `${duplicates.length} مجموعة من الصور المتشابهة`);
     }
   }, [images, addNotification]);
 
@@ -531,35 +519,20 @@ export default function WorkingApp() {
     });
 
     // إزالة أي تكرارات محتملة بناءً على ID
-    const uniqueFiltered = filtered.filter(
-      (img, index, arr) =>
-        arr.findIndex((item) => item.id === img.id) === index,
+    const uniqueFiltered = filtered.filter((img, index, arr) =>
+      arr.findIndex(item => item.id === img.id) === index
     );
 
     return uniqueFiltered;
-  }, [
-    images,
-    searchQuery,
-    filterCategory,
-    showProcessedOnly,
-    minConfidence,
-    sortBy,
-  ]);
+  }, [images, searchQuery, filterCategory, showProcessedOnly, minConfidence, sortBy]);
 
   // تهيئة محرك الذكاء الاصطناعي
   useEffect(() => {
-    enhancedAIEngine
-      .initialize()
-      .then(() => {
-        addNotification(
-          "success",
-          "تم تهيئة محرك الذكاء الاصطناعي",
-          "النظام جاهز للاستخدام",
-        );
-      })
-      .catch(() => {
-        addNotification("warning", "تحذير", "سيتم استخدام التحليل الأساسي");
-      });
+    enhancedAIEngine.initialize().then(() => {
+      addNotification("success", "تم تهيئة محرك الذكاء الاصطناعي", "��لنظام جاهز للاستخدام");
+    }).catch(() => {
+      addNotification("warning", "تحذير", "سيتم استخدام التحليل الأساسي");
+    });
   }, [addNotification]);
 
   // إحصائيات
@@ -680,23 +653,17 @@ export default function WorkingApp() {
               {/* إحصائيات سريعة */}
               <div className="hidden md:flex items-center space-x-6 px-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-xl">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-blue-600">
-                    {images.length}
-                  </div>
+                  <div className="text-lg font-bold text-blue-600">{images.length}</div>
                   <div className="text-xs text-gray-500">صورة</div>
                 </div>
                 <div className="w-px h-8 bg-gray-300"></div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-green-600">
-                    {stats.processed}
-                  </div>
+                  <div className="text-lg font-bold text-green-600">{stats.processed}</div>
                   <div className="text-xs text-gray-500">محلل</div>
                 </div>
                 <div className="w-px h-8 bg-gray-300"></div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-purple-600">
-                    {stats.faces}
-                  </div>
+                  <div className="text-lg font-bold text-purple-600">{stats.faces}</div>
                   <div className="text-xs text-gray-500">وجه</div>
                 </div>
               </div>
@@ -707,12 +674,8 @@ export default function WorkingApp() {
                   <>
                     <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
                     <div className="text-sm">
-                      <div className="font-medium text-blue-600">
-                        معالجة جارية
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {Math.round(overallProgress)}% مكتمل
-                      </div>
+                      <div className="font-medium text-blue-600">معالجة جارية</div>
+                      <div className="text-xs text-gray-500">{Math.round(overallProgress)}% مكتمل</div>
                     </div>
                   </>
                 ) : (
@@ -757,12 +720,12 @@ export default function WorkingApp() {
                     </div>
                     <div>
                       <div className="text-lg font-semibold">رفع الصور</div>
-                      <div className="text-xs text-gray-500">
-                        سحب وإفلات أو تحديد
-                      </div>
+                      <div className="text-xs text-gray-500">سحب وإفلات أو تحديد</div>
                     </div>
                   </div>
-                  <Badge className="bg-green-100 text-green-700">✓ يعمل</Badge>
+                  <Badge className="bg-green-100 text-green-700">
+                    ✓ يعمل
+                  </Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -796,7 +759,7 @@ export default function WorkingApp() {
                     dragActive
                       ? "border-blue-500 bg-gradient-to-br from-blue-50 to-purple-50 scale-105"
                       : "border-gray-300 hover:border-blue-400 hover:bg-gray-50",
-                    isProcessing && "pointer-events-none opacity-50",
+                    isProcessing && "pointer-events-none opacity-50"
                   )}
                   onClick={selectFiles}
                 >
@@ -858,9 +821,7 @@ export default function WorkingApp() {
 
                       <Button
                         onClick={autoOrganizeImages}
-                        disabled={
-                          images.filter((img) => img.processed).length === 0
-                        }
+                        disabled={images.filter(img => img.processed).length === 0}
                         className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700"
                       >
                         <FolderOpen className="w-4 h-4 mr-2" />
@@ -975,10 +936,7 @@ export default function WorkingApp() {
 
                 <div>
                   <Label>تصنيف الصور</Label>
-                  <Select
-                    value={filterCategory}
-                    onValueChange={setFilterCategory}
-                  >
+                  <Select value={filterCategory} onValueChange={setFilterCategory}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -1023,23 +981,15 @@ export default function WorkingApp() {
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center p-3 bg-white rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">
-                        {stats.processed}
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        صورة تم تحليلها
-                      </div>
+                      <div className="text-2xl font-bold text-green-600">{stats.processed}</div>
+                      <div className="text-sm text-gray-600">صورة تم تحليلها</div>
                     </div>
                     <div className="text-center p-3 bg-white rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">
-                        {Object.keys(stats.categories).length}
-                      </div>
+                      <div className="text-2xl font-bold text-blue-600">{Object.keys(stats.categories).length}</div>
                       <div className="text-sm text-gray-600">فئة مكتشفة</div>
                     </div>
                     <div className="text-center p-3 bg-white rounded-lg">
-                      <div className="text-2xl font-bold text-purple-600">
-                        {stats.faces}
-                      </div>
+                      <div className="text-2xl font-bold text-purple-600">{stats.faces}</div>
                       <div className="text-sm text-gray-600">وجه مكتشف</div>
                     </div>
                     <div className="text-center p-3 bg-white rounded-lg">
@@ -1054,16 +1004,14 @@ export default function WorkingApp() {
                                 stats.processed) *
                                 100,
                             )
-                          : 0}
-                        %
+                          : 0}%
                       </div>
                       <div className="text-sm text-gray-600">دقة التحليل</div>
                     </div>
                   </div>
                   <div className="mt-4 p-3 bg-blue-100 rounded-lg">
                     <p className="text-sm text-blue-800 text-center">
-                      🎉 تم تنظيم صورك وتصنيفها بنجاح! يمكنك الآن تصفحها والبحث
-                      فيها بسهولة في الأسفل
+                      🎉 تم تنظيم صورك وتصنيفها بنجاح! يمكنك الآن تصفحها والبحث فيها بسهولة في الأسفل
                     </p>
                   </div>
                 </CardContent>
@@ -1259,33 +1207,24 @@ export default function WorkingApp() {
                   {/* معلومات النتائج */}
                   <div className="flex items-center justify-between text-sm text-gray-600">
                     <span>
-                      عرض {filteredAndSortedImages.length} من {images.length}{" "}
-                      صورة
+                      عرض {filteredAndSortedImages.length} من {images.length} صورة
                       {filterCategory !== "all" && ` • ${filterCategory}`}
                       {searchQuery && ` • البحث: "${searchQuery}"`}
                     </span>
                     <span>
-                      مرتب حسب:{" "}
-                      {sortBy === "date"
-                        ? "التاريخ"
-                        : sortBy === "name"
-                          ? "الاسم"
-                          : sortBy === "size"
-                            ? "الحجم"
-                            : sortBy === "confidence"
-                              ? "الدقة"
-                              : sortBy === "category"
-                                ? "التصنيف"
-                                : sortBy === "faces"
-                                  ? "الوجوه"
-                                  : sortBy}
+                      مرتب حسب: {sortBy === "date" ? "التاريخ" :
+                                sortBy === "name" ? "الاسم" :
+                                sortBy === "size" ? "الحجم" :
+                                sortBy === "confidence" ? "الدقة" :
+                                sortBy === "category" ? "التصنيف" :
+                                sortBy === "faces" ? "الوجوه" : sortBy}
                     </span>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* لوحة كشف المتكررات */}
+            {/* لوحة ك��ف المتكررات */}
             {showDuplicatesPanel && duplicateGroups.length > 0 && (
               <Card className="border-orange-200 bg-orange-50">
                 <CardHeader>
@@ -1297,49 +1236,36 @@ export default function WorkingApp() {
                 <CardContent>
                   <div className="space-y-4">
                     {duplicateGroups.map((group, index) => (
-                      <div
-                        key={group.id}
-                        className="p-4 bg-white rounded-lg border"
-                      >
+                      <div key={group.id} className="p-4 bg-white rounded-lg border">
                         <div className="flex items-center justify-between mb-3">
                           <span className="font-medium text-sm">
-                            مجموعة {index + 1} - {group.images.length} صور
-                            متشابهة
+                            مجموعة {index + 1} - {group.images.length} صور متشابهة
                           </span>
                           <Badge variant="outline">
                             {(group.similarity * 100).toFixed(0)}% تشابه
                           </Badge>
                         </div>
                         <div className="grid grid-cols-6 gap-2">
-                          {group.images
-                            .slice(0, 6)
-                            .map((imageId: string, imgIndex: number) => {
-                              const image = images.find(
-                                (img) => img.id === imageId,
-                              );
-                              return image ? (
-                                <div
-                                  key={`duplicate-${group.id}-${imageId}-${imgIndex}`}
-                                  className="relative aspect-square"
-                                >
-                                  <img
-                                    src={image.url}
-                                    alt={image.name}
-                                    className="w-full h-full object-cover rounded border"
-                                  />
-                                  {imageId === group.representative && (
-                                    <div className="absolute top-1 right-1 bg-green-500 rounded-full p-1">
-                                      <CheckCircle className="w-3 h-3 text-white" />
-                                    </div>
-                                  )}
-                                </div>
-                              ) : null;
-                            })}
+                          {group.images.slice(0, 6).map((imageId: string, imgIndex: number) => {
+                            const image = images.find(img => img.id === imageId);
+                            return image ? (
+                              <div key={`duplicate-${group.id}-${imageId}-${imgIndex}`} className="relative aspect-square">
+                                <img
+                                  src={image.url}
+                                  alt={image.name}
+                                  className="w-full h-full object-cover rounded border"
+                                />
+                                {imageId === group.representative && (
+                                  <div className="absolute top-1 right-1 bg-green-500 rounded-full p-1">
+                                    <CheckCircle className="w-3 h-3 text-white" />
+                                  </div>
+                                )}
+                              </div>
+                            ) : null;
+                          })}
                           {group.images.length > 6 && (
                             <div className="aspect-square bg-gray-100 rounded border flex items-center justify-center">
-                              <span className="text-xs text-gray-500">
-                                +{group.images.length - 6}
-                              </span>
+                              <span className="text-xs text-gray-500">+{group.images.length - 6}</span>
                             </div>
                           )}
                         </div>
@@ -1361,8 +1287,7 @@ export default function WorkingApp() {
             )}
 
             {/* عرض المجلدات الذكية */}
-            {viewMode === "folders" &&
-            Object.keys(virtualFolders).length > 0 ? (
+            {viewMode === "folders" && Object.keys(virtualFolders).length > 0 ? (
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
@@ -1373,42 +1298,28 @@ export default function WorkingApp() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {Object.entries(virtualFolders).map(
-                        ([folderName, imageIds]) => (
-                          <Card
-                            key={folderName}
-                            className={cn(
-                              "cursor-pointer transition-all duration-200 hover:shadow-lg",
-                              selectedFolder === folderName
-                                ? "ring-2 ring-blue-500"
-                                : "",
-                            )}
-                            onClick={() =>
-                              setSelectedFolder(
-                                selectedFolder === folderName
-                                  ? null
-                                  : folderName,
-                              )
-                            }
-                          >
-                            <CardContent className="p-4">
-                              <div className="text-center space-y-3">
-                                <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center">
-                                  <FolderOpen className="w-8 h-8 text-blue-600" />
-                                </div>
-                                <div>
-                                  <h4 className="font-medium text-sm">
-                                    {folderName}
-                                  </h4>
-                                  <p className="text-xs text-gray-500">
-                                    {imageIds.length} صورة
-                                  </p>
-                                </div>
+                      {Object.entries(virtualFolders).map(([folderName, imageIds]) => (
+                        <Card
+                          key={folderName}
+                          className={cn(
+                            "cursor-pointer transition-all duration-200 hover:shadow-lg",
+                            selectedFolder === folderName ? "ring-2 ring-blue-500" : ""
+                          )}
+                          onClick={() => setSelectedFolder(selectedFolder === folderName ? null : folderName)}
+                        >
+                          <CardContent className="p-4">
+                            <div className="text-center space-y-3">
+                              <div className="w-16 h-16 mx-auto bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center">
+                                <FolderOpen className="w-8 h-8 text-blue-600" />
                               </div>
-                            </CardContent>
-                          </Card>
-                        ),
-                      )}
+                              <div>
+                                <h4 className="font-medium text-sm">{folderName}</h4>
+                                <p className="text-xs text-gray-500">{imageIds.length} صورة</p>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
@@ -1430,71 +1341,51 @@ export default function WorkingApp() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        {virtualFolders[selectedFolder].map(
-                          (imageId, index) => {
-                            const image = images.find(
-                              (img) => img.id === imageId,
-                            );
-                            return image ? (
-                              <Card
-                                key={`folder-${selectedFolder}-${imageId}-${index}`}
-                                className="overflow-hidden"
-                              >
-                                <div className="relative aspect-square">
-                                  <img
-                                    src={image.url}
-                                    alt={image.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="p-2">
-                                  <p className="text-xs font-medium truncate">
-                                    {image.name}
-                                  </p>
-                                </div>
-                              </Card>
-                            ) : null;
-                          },
-                        )}
+                        {virtualFolders[selectedFolder].map((imageId, index) => {
+                          const image = images.find(img => img.id === imageId);
+                          return image ? (
+                            <Card key={`folder-${selectedFolder}-${imageId}-${index}`} className="overflow-hidden">
+                              <div className="relative aspect-square">
+                                <img
+                                  src={image.url}
+                                  alt={image.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div className="p-2">
+                                <p className="text-xs font-medium truncate">{image.name}</p>
+                              </div>
+                            </Card>
+                          ) : null;
+                        })}
                       </div>
                     </CardContent>
                   </Card>
                 )}
               </div>
-            ) : /* معرض الصور ال��نظم */
-            filteredAndSortedImages.length > 0 ? (
+            ) : (
+              /* معرض الصور المنظم */
+              filteredAndSortedImages.length > 0 ? (
               <div className="space-y-6">
                 {/* شريط الحالة */}
                 <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
                   <CardContent className="pt-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                       <div className="space-y-1">
-                        <div className="text-2xl font-bold text-blue-600">
-                          {filteredAndSortedImages.length}
-                        </div>
+                        <div className="text-2xl font-bold text-blue-600">{filteredAndSortedImages.length}</div>
                         <div className="text-xs text-gray-600">صور معروضة</div>
                       </div>
                       <div className="space-y-1">
                         <div className="text-2xl font-bold text-green-600">
-                          {
-                            filteredAndSortedImages.filter(
-                              (img) => img.processed,
-                            ).length
-                          }
+                          {filteredAndSortedImages.filter(img => img.processed).length}
                         </div>
                         <div className="text-xs text-gray-600">تم تحليلها</div>
                       </div>
                       <div className="space-y-1">
                         <div className="text-2xl font-bold text-orange-600">
-                          {
-                            filteredAndSortedImages.filter(
-                              (img) => !img.processed,
-                            ).length
-                          }
+                          {filteredAndSortedImages.filter(img => !img.processed).length}
                         </div>
-                        <div className="text-xs text-gray-600">
-                          بانتظار التحليل
-                        </div>
+                        <div className="text-xs text-gray-600">بانتظار التحليل</div>
                       </div>
                       <div className="space-y-1">
                         <div className="text-2xl font-bold text-purple-600">
@@ -1517,37 +1408,24 @@ export default function WorkingApp() {
                     </CardHeader>
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
-                        {Object.entries(stats.categories).map(
-                          ([category, count]) => (
-                            <Button
-                              key={category}
-                              variant={
-                                filterCategory === category
-                                  ? "default"
-                                  : "outline"
-                              }
-                              size="sm"
-                              onClick={() => setFilterCategory(category)}
-                              className="flex items-center space-x-2"
-                            >
-                              <span>{category}</span>
-                              <Badge variant="secondary" className="ml-1">
-                                {count}
-                              </Badge>
-                            </Button>
-                          ),
-                        )}
+                        {Object.entries(stats.categories).map(([category, count]) => (
+                          <Button
+                            key={category}
+                            variant={filterCategory === category ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setFilterCategory(category)}
+                            className="flex items-center space-x-2"
+                          >
+                            <span>{category}</span>
+                            <Badge variant="secondary" className="ml-1">{count}</Badge>
+                          </Button>
+                        ))}
                         <Button
-                          variant={
-                            filterCategory === "all" ? "default" : "outline"
-                          }
+                          variant={filterCategory === "all" ? "default" : "outline"}
                           size="sm"
                           onClick={() => setFilterCategory("all")}
                         >
-                          جميع الصور{" "}
-                          <Badge variant="secondary" className="ml-1">
-                            {images.length}
-                          </Badge>
+                          جميع الصور <Badge variant="secondary" className="ml-1">{images.length}</Badge>
                         </Button>
                       </div>
                     </CardContent>
@@ -1573,7 +1451,7 @@ export default function WorkingApp() {
                         transition={{
                           delay: index * 0.03,
                           duration: 0.3,
-                          ease: "easeOut",
+                          ease: "easeOut"
                         }}
                         className="group relative"
                       >
@@ -1602,50 +1480,40 @@ export default function WorkingApp() {
                                 </div>
                               )}
 
-                              {image.analysis &&
-                                image.analysis.confidence > 0.8 && (
-                                  <div className="bg-blue-500 rounded-full p-1 shadow-lg">
-                                    <Target className="w-3 h-3 text-white" />
-                                  </div>
-                                )}
+                              {image.analysis && image.analysis.confidence > 0.8 && (
+                                <div className="bg-blue-500 rounded-full p-1 shadow-lg">
+                                  <Target className="w-3 h-3 text-white" />
+                                </div>
+                              )}
                             </div>
 
                             {/* التصنيف */}
                             {image.category && (
                               <div className="absolute top-2 left-2">
-                                <Badge
-                                  className="text-xs font-medium shadow-lg"
-                                  variant="secondary"
-                                >
-                                  {image.category === "selfies"
-                                    ? "صور شخصية"
-                                    : image.category === "nature"
-                                      ? "طبيعة"
-                                      : image.category === "food"
-                                        ? "طعام"
-                                        : image.category === "documents"
-                                          ? "وثائق"
-                                          : image.category === "screenshots"
-                                            ? "لقطات شاشة"
-                                            : "أخرى"}
+                                <Badge className="text-xs font-medium shadow-lg" variant="secondary">
+                                  {image.category === "selfies" ? "صور شخصية" :
+                                   image.category === "nature" ? "طبيعة" :
+                                   image.category === "food" ? "طعام" :
+                                   image.category === "documents" ? "وثائق" :
+                                   image.category === "screenshots" ? "لقطات شاشة" :
+                                   "أخرى"}
                                 </Badge>
                               </div>
                             )}
 
                             {/* الوجوه المكتشفة */}
-                            {image.analysis &&
-                              image.analysis.faces.length > 0 && (
-                                <div className="absolute bottom-2 right-2">
-                                  <div className="bg-purple-500 rounded-full p-1 shadow-lg">
-                                    <div className="flex items-center space-x-1 px-1">
-                                      <Users className="w-3 h-3 text-white" />
-                                      <span className="text-xs text-white font-medium">
-                                        {image.analysis.faces.length}
-                                      </span>
-                                    </div>
+                            {image.analysis && image.analysis.faces.length > 0 && (
+                              <div className="absolute bottom-2 right-2">
+                                <div className="bg-purple-500 rounded-full p-1 shadow-lg">
+                                  <div className="flex items-center space-x-1 px-1">
+                                    <Users className="w-3 h-3 text-white" />
+                                    <span className="text-xs text-white font-medium">
+                                      {image.analysis.faces.length}
+                                    </span>
                                   </div>
                                 </div>
-                              )}
+                              </div>
+                            )}
 
                             {/* شريط الأدوات */}
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
@@ -1654,9 +1522,7 @@ export default function WorkingApp() {
                                   variant="secondary"
                                   size="sm"
                                   className="bg-white/90 hover:bg-white"
-                                  onClick={() =>
-                                    window.open(image.url, "_blank")
-                                  }
+                                  onClick={() => window.open(image.url, '_blank')}
                                 >
                                   <Eye className="w-4 h-4" />
                                 </Button>
@@ -1672,7 +1538,7 @@ export default function WorkingApp() {
                                   size="sm"
                                   className="bg-white/90 hover:bg-white"
                                   onClick={() => {
-                                    const link = document.createElement("a");
+                                    const link = document.createElement('a');
                                     link.href = image.url;
                                     link.download = image.name;
                                     link.click();
@@ -1691,15 +1557,10 @@ export default function WorkingApp() {
                               </h4>
 
                               <div className="flex items-center justify-between text-xs text-gray-500">
-                                <span>
-                                  {(image.size / 1024 / 1024).toFixed(1)} MB
-                                </span>
+                                <span>{(image.size / 1024 / 1024).toFixed(1)} MB</span>
                                 {image.analysis && (
                                   <span className="text-green-600 font-medium">
-                                    {(image.analysis.confidence * 100).toFixed(
-                                      0,
-                                    )}
-                                    % دقة
+                                    {(image.analysis.confidence * 100).toFixed(0)}% دقة
                                   </span>
                                 )}
                               </div>
@@ -1722,10 +1583,7 @@ export default function WorkingApp() {
                                     </Badge>
                                   ))}
                                   {image.tags.length > 3 && (
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs px-1.5 py-0.5"
-                                    >
+                                    <Badge variant="outline" className="text-xs px-1.5 py-0.5">
                                       +{image.tags.length - 3}
                                     </Badge>
                                   )}
@@ -1765,6 +1623,7 @@ export default function WorkingApp() {
                   </div>
                 </CardContent>
               </Card>
+            )
             )}
           </div>
         </div>
