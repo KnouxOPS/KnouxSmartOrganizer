@@ -270,7 +270,7 @@ async function analyzeImage(filePath, fileName, win, settings = {}) {
     // 6. Generate Description - تشغيل شرطي
     if (settings.runDescription !== false) {
       try {
-        const captionResult = await imageToTextGenerator(rawImage);
+        const captionResult = await models.captioner(rawImage);
         results.description = captionResult[0].generated_text;
       } catch (e) {
         results.errors.push(`Caption generation failed: ${e.message}`);
@@ -319,7 +319,7 @@ async function analyzeImage(filePath, fileName, win, settings = {}) {
 async function organizeImages(win) {
   if (isProcessing) {
     win.webContents.send("update-progress", "عملية أخرى قيد التنفيذ...");
-    return { success: false, message: "عملية أخر�� قيد التنفيذ" };
+    return { success: false, message: "عملية أخرى قيد التنفيذ" };
   }
 
   isProcessing = true;
