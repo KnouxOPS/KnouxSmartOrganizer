@@ -255,7 +255,7 @@ export default function WorkingApp() {
         imagesToProcess || images.filter((img) => !img.processed);
 
       if (targetImages.length === 0) {
-        addNotification("warning", "لا ��وجد صور للمعالجة");
+        addNotification("warning", "لا توجد صور للمعالجة");
         return;
       }
 
@@ -547,6 +547,22 @@ export default function WorkingApp() {
     minConfidence,
     sortBy,
   ]);
+
+  // تهيئة محرك الذكاء الاصطناعي
+  useEffect(() => {
+    enhancedAIEngine
+      .initialize()
+      .then(() => {
+        addNotification(
+          "success",
+          "تم تهيئة محرك الذكاء الاصطناعي",
+          "النظام جاهز للاستخدام",
+        );
+      })
+      .catch(() => {
+        addNotification("warning", "تحذير", "سيتم استخدام التحليل الأساسي");
+      });
+  }, [addNotification]);
 
   // إحصائيات
   const stats = {
@@ -909,7 +925,7 @@ export default function WorkingApp() {
                     checked={showProcessedOnly}
                     onCheckedChange={setShowProcessedOnly}
                   />
-                  <Label>ا��معالجة فقط</Label>
+                  <Label>المعالجة فقط</Label>
                 </div>
 
                 <div>
