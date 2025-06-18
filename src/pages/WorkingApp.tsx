@@ -290,7 +290,7 @@ export default function WorkingApp() {
             // تحليل شامل بالذكاء الاصطناعي القوي
             const processedImage = await powerfulAI.processImage(image.file, aiSettings);
 
-            // تحديث الصورة مع النتا��ج الجديدة
+            // تحديث الصورة مع النتائج الجديدة
             setImages((prev) =>
               prev.map((img) =>
                 img.id === image.id
@@ -298,9 +298,7 @@ export default function WorkingApp() {
                       ...processedImage,
                       id: img.id, // الحفاظ على ID الأصلي
                       processed: true,
-                    category: analysis.category,
-                    tags: analysis.tags,
-                  }
+                    }
                 : img,
             ),
           );
@@ -369,7 +367,7 @@ export default function WorkingApp() {
         addNotification(
           "error",
           "خطأ في المعالجة",
-          "حدث خطأ أث��اء معالجة الصور",
+          "حدث خطأ أثناء معالجة الصور",
         );
       }
     },
@@ -529,7 +527,7 @@ export default function WorkingApp() {
   // تهيئة محرك الذكاء الاصطناعي
   useEffect(() => {
     enhancedAIEngine.initialize().then(() => {
-      addNotification("success", "تم تهيئة محرك الذكاء الاصطناعي", "��لنظام جاهز للاستخدام");
+      addNotification("success", "تم تهيئة محرك الذكاء الاصطناعي", "النظام جاهز للاستخدام");
     }).catch(() => {
       addNotification("warning", "تحذير", "سيتم استخدام التحليل الأساسي");
     });
@@ -1224,7 +1222,7 @@ export default function WorkingApp() {
               </CardContent>
             </Card>
 
-            {/* لوحة ك��ف المتكررات */}
+            {/* لوحة كشف المتكررات */}
             {showDuplicatesPanel && duplicateGroups.length > 0 && (
               <Card className="border-orange-200 bg-orange-50">
                 <CardHeader>
