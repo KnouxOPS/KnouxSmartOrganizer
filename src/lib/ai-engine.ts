@@ -77,7 +77,7 @@ class AIEngine {
     progressCallback("🚀 بدء تهيئة النماذج المتقدمة...", 0);
 
     try {
-      // تحميل النماذج بناءً على إعدادات المست��دم لتوفير الذاكرة
+      // تحميل النماذج بناءً على إعدادات المستخدم لتوفير الذاكرة
       let totalModels = 0;
       let loadedModels = 0;
 
@@ -214,7 +214,7 @@ class AIEngine {
           await faceapi.nets.ageGenderNet.loadFromUri(cdnPath);
 
           progressCallback(
-            "👤 تحميل ��موذج تحليل المشاعر...",
+            "👤 تحميل نموذج تحليل المشاعر...",
             (loadedModels / totalModels) * 90,
           );
           await faceapi.nets.faceExpressionNet.loadFromUri(cdnPath);
@@ -403,14 +403,23 @@ class AIEngine {
       }
 
       // 2. الوصف الذكي والسياقي
-      if (settings.runCaptioner && this.models.captioner) {
-        try {
-          const result = await this.models.captioner(previewUrl);
-          analysis.description =
-            result[0]?.generated_text || "لا يمكن وصف الصورة";
-        } catch (e) {
-          console.error("Captioner Error:", e);
-          analysis.error = `خطأ في الوصف: ${e}`;
+      if (settings.runCaptioner) {
+        if (this.models.captioner && !this.models.captionerFailed) {
+          try {
+            const result = await this.models.captioner(previewUrl);
+            analysis.description =
+              result[0]?.generated_text || "لا يمكن وصف الصورة";
+          } catch (e) {
+            console.error("Captioner Error:", e);
+            analysis.error = `خطأ في الوصف: ${e}`;
+          }
+        } else {
+          // استخدام وصف مبسط
+          analysis.description = this.generateSimpleDescription(
+            file,
+            imageElement,
+            analysis.classification?.[0]?.label,
+          );
         }
       }
 
@@ -676,7 +685,7 @@ class AIEngine {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d")!;
 
-    // تصغير الصورة لتسر��ع المعالجة
+    // تصغير الصورة لتسريع المعالجة
     canvas.width = 150;
     canvas.height = 150;
     ctx.drawImage(imageElement, 0, 0, 150, 150);
