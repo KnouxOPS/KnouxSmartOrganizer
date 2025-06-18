@@ -341,7 +341,7 @@ function AnalysisCard({ analysis }: { analysis: ImageAnalysis }) {
                     <span>{Math.round(analysis.quality.contrast * 100)}%</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>ا��سطوع:</span>
+                    <span>السطوع:</span>
                     <span>
                       {Math.round(analysis.quality.brightness * 100)}%
                     </span>
@@ -613,13 +613,28 @@ export function OrganizerPage() {
                 className={cn(
                   "w-3 h-3 rounded-full",
                   isInitialized
-                    ? "bg-green-500 animate-pulse"
+                    ? usingFallback
+                      ? "bg-blue-500 animate-pulse"
+                      : "bg-green-500 animate-pulse"
                     : isProcessing
                       ? "bg-yellow-500 animate-spin"
                       : "bg-gray-400",
                 )}
               />
               <span className="font-medium">{status}</span>
+              {isInitialized && (
+                <Badge
+                  variant={usingFallback ? "secondary" : "default"}
+                  className={cn(
+                    "text-xs",
+                    usingFallback
+                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                      : "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+                  )}
+                >
+                  {usingFallback ? "محرك مبسط" : "محرك متقدم"}
+                </Badge>
+              )}
             </div>
 
             {(isProcessing || progress > 0) && (
