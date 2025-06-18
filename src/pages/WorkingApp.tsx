@@ -166,7 +166,7 @@ export default function WorkingApp() {
       },
       {
         id: "categorization",
-        name: "التصنيف",
+        name: "الت��نيف",
         description: "تصنيف الصور",
         status: "pending",
         progress: 0,
@@ -779,7 +779,7 @@ export default function WorkingApp() {
                 </div>
 
                 <div>
-                  <Label>ترتي�� حسب</Label>
+                  <Label>ترتيب حسب</Label>
                   <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger>
                       <SelectValue />
@@ -1023,7 +1023,7 @@ export default function WorkingApp() {
                     <span>
                       مرتب حسب:{" "}
                       {sortBy === "date"
-                        ? "التاريخ"
+                        ? "التار��خ"
                         : sortBy === "name"
                           ? "الاسم"
                           : sortBy === "size"
@@ -1041,99 +1041,283 @@ export default function WorkingApp() {
               </CardContent>
             </Card>
 
-            {/* عرض الصور */}
+            {/* معرض الصور المنظم */}
             {filteredAndSortedImages.length > 0 ? (
-              <div
-                className={cn(
-                  "grid gap-4",
-                  viewMode === "grid"
-                    ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
-                    : "grid-cols-1",
-                )}
-              >
-                <AnimatePresence>
-                  {filteredAndSortedImages.map((image, index) => (
-                    <motion.div
-                      key={image.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.8 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="group relative"
-                    >
-                      <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg hover:scale-105">
-                        <div className="relative aspect-square bg-gray-100">
-                          <img
-                            src={image.url}
-                            alt={image.name}
-                            className="w-full h-full object-cover"
-                          />
+              <div className="space-y-6">
+                {/* شريط الحالة */}
+                <Card className="bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200">
+                  <CardContent className="pt-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                      <div className="space-y-1">
+                        <div className="text-2xl font-bold text-blue-600">
+                          {filteredAndSortedImages.length}
+                        </div>
+                        <div className="text-xs text-gray-600">صور معروضة</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-2xl font-bold text-green-600">
+                          {
+                            filteredAndSortedImages.filter(
+                              (img) => img.processed,
+                            ).length
+                          }
+                        </div>
+                        <div className="text-xs text-gray-600">تم تحليلها</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-2xl font-bold text-orange-600">
+                          {
+                            filteredAndSortedImages.filter(
+                              (img) => !img.processed,
+                            ).length
+                          }
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          بانتظار التحليل
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-2xl font-bold text-purple-600">
+                          {Object.keys(stats.categories).length}
+                        </div>
+                        <div className="text-xs text-gray-600">فئات مختلفة</div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                          <div className="absolute top-2 right-2">
-                            {image.processed ? (
-                              <div className="bg-green-500 rounded-full p-1">
-                                <CheckCircle className="w-4 h-4 text-white" />
-                              </div>
-                            ) : (
-                              <div className="bg-yellow-500 rounded-full p-1 animate-pulse">
-                                <Clock className="w-4 h-4 text-white" />
-                              </div>
-                            )}
-                          </div>
-
-                          {image.category && (
-                            <div className="absolute top-2 left-2">
-                              <Badge className="text-xs">
-                                {image.category}
+                {/* التصنيفات السريعة */}
+                {Object.keys(stats.categories).length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center">
+                        <Palette className="w-5 h-5 mr-2" />
+                        تصنيفات الصور المكتشفة
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(stats.categories).map(
+                          ([category, count]) => (
+                            <Button
+                              key={category}
+                              variant={
+                                filterCategory === category
+                                  ? "default"
+                                  : "outline"
+                              }
+                              size="sm"
+                              onClick={() => setFilterCategory(category)}
+                              className="flex items-center space-x-2"
+                            >
+                              <span>{category}</span>
+                              <Badge variant="secondary" className="ml-1">
+                                {count}
                               </Badge>
-                            </div>
-                          )}
+                            </Button>
+                          ),
+                        )}
+                        <Button
+                          variant={
+                            filterCategory === "all" ? "default" : "outline"
+                          }
+                          size="sm"
+                          onClick={() => setFilterCategory("all")}
+                        >
+                          جميع الصور{" "}
+                          <Badge variant="secondary" className="ml-1">
+                            {images.length}
+                          </Badge>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-2">
-                            <Button variant="secondary" size="sm">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button variant="secondary" size="sm">
-                              <Heart className="w-4 h-4" />
-                            </Button>
-                            <Button variant="secondary" size="sm">
-                              <Download className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
+                {/* عرض الصور */}
+                <div
+                  className={cn(
+                    "grid gap-4",
+                    viewMode === "grid"
+                      ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+                      : "grid-cols-1",
+                  )}
+                >
+                  <AnimatePresence>
+                    {filteredAndSortedImages.map((image, index) => (
+                      <motion.div
+                        key={image.id}
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9, y: -20 }}
+                        transition={{
+                          delay: index * 0.03,
+                          duration: 0.3,
+                          ease: "easeOut",
+                        }}
+                        className="group relative"
+                      >
+                        <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border-2 hover:border-blue-200">
+                          <div className="relative aspect-square bg-gradient-to-br from-gray-100 to-gray-200">
+                            <img
+                              src={image.url}
+                              alt={image.name}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                              loading="lazy"
+                            />
 
-                        <div className="p-3">
-                          <h4 className="font-medium text-sm truncate mb-1">
-                            {image.name}
-                          </h4>
-                          <div className="text-xs text-gray-500 space-y-1">
-                            <div>
-                              {(image.size / 1024 / 1024).toFixed(1)} MB
+                            {/* معلومات الحالة */}
+                            <div className="absolute top-2 right-2 space-y-1">
+                              {image.processed ? (
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  className="bg-green-500 rounded-full p-1.5 shadow-lg"
+                                >
+                                  <CheckCircle className="w-4 h-4 text-white" />
+                                </motion.div>
+                              ) : (
+                                <div className="bg-yellow-500 rounded-full p-1.5 animate-pulse shadow-lg">
+                                  <Clock className="w-4 h-4 text-white" />
+                                </div>
+                              )}
+
+                              {image.analysis &&
+                                image.analysis.confidence > 0.8 && (
+                                  <div className="bg-blue-500 rounded-full p-1 shadow-lg">
+                                    <Target className="w-3 h-3 text-white" />
+                                  </div>
+                                )}
                             </div>
-                            {image.analysis && (
-                              <div className="truncate">
-                                {image.analysis.description}
+
+                            {/* التصنيف */}
+                            {image.category && (
+                              <div className="absolute top-2 left-2">
+                                <Badge
+                                  className="text-xs font-medium shadow-lg"
+                                  variant="secondary"
+                                >
+                                  {image.category === "selfies"
+                                    ? "صور شخصية"
+                                    : image.category === "nature"
+                                      ? "طبيعة"
+                                      : image.category === "food"
+                                        ? "طعام"
+                                        : image.category === "documents"
+                                          ? "وثائق"
+                                          : image.category === "screenshots"
+                                            ? "لقطات شاشة"
+                                            : "أخرى"}
+                                </Badge>
                               </div>
                             )}
-                            {image.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1 mt-2">
-                                {image.tags.slice(0, 2).map((tag) => (
-                                  <Badge
-                                    key={tag}
-                                    variant="outline"
-                                    className="text-xs"
-                                  >
-                                    {tag}
-                                  </Badge>
-                                ))}
+
+                            {/* الوجوه المكتشفة */}
+                            {image.analysis &&
+                              image.analysis.faces.length > 0 && (
+                                <div className="absolute bottom-2 right-2">
+                                  <div className="bg-purple-500 rounded-full p-1 shadow-lg">
+                                    <div className="flex items-center space-x-1 px-1">
+                                      <Users className="w-3 h-3 text-white" />
+                                      <span className="text-xs text-white font-medium">
+                                        {image.analysis.faces.length}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                            {/* شريط الأدوات */}
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="bg-white/90 hover:bg-white"
+                                  onClick={() =>
+                                    window.open(image.url, "_blank")
+                                  }
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="bg-white/90 hover:bg-white"
+                                >
+                                  <Heart className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="bg-white/90 hover:bg-white"
+                                  onClick={() => {
+                                    const link = document.createElement("a");
+                                    link.href = image.url;
+                                    link.download = image.name;
+                                    link.click();
+                                  }}
+                                >
+                                  <Download className="w-4 h-4" />
+                                </Button>
                               </div>
-                            )}
+                            </div>
                           </div>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
+
+                          <div className="p-4 bg-white">
+                            <div className="space-y-2">
+                              <h4 className="font-semibold text-sm truncate text-gray-800">
+                                {image.name}
+                              </h4>
+
+                              <div className="flex items-center justify-between text-xs text-gray-500">
+                                <span>
+                                  {(image.size / 1024 / 1024).toFixed(1)} MB
+                                </span>
+                                {image.analysis && (
+                                  <span className="text-green-600 font-medium">
+                                    {(image.analysis.confidence * 100).toFixed(
+                                      0,
+                                    )}
+                                    % دقة
+                                  </span>
+                                )}
+                              </div>
+
+                              {image.analysis && (
+                                <p className="text-xs text-gray-600 line-clamp-2">
+                                  {image.analysis.description}
+                                </p>
+                              )}
+
+                              {image.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {image.tags.slice(0, 3).map((tag) => (
+                                    <Badge
+                                      key={tag}
+                                      variant="outline"
+                                      className="text-xs px-1.5 py-0.5"
+                                    >
+                                      {tag}
+                                    </Badge>
+                                  ))}
+                                  {image.tags.length > 3 && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs px-1.5 py-0.5"
+                                    >
+                                      +{image.tags.length - 3}
+                                    </Badge>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
               </div>
             ) : (
               <Card>
