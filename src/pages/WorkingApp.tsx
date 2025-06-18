@@ -119,7 +119,7 @@ export default function WorkingApp() {
 
   const addNotification = useCallback(
     (type: string, title: string, description?: string) => {
-      const id = Date.now().toString();
+      const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const notification = {
         id,
         type,
@@ -214,8 +214,8 @@ export default function WorkingApp() {
       );
 
       // إنشاء كائنات الصور
-      const newImages: ProcessedImage[] = imageFiles.map((file) => ({
-        id: crypto.randomUUID(),
+      const newImages: ProcessedImage[] = imageFiles.map((file, index) => ({
+        id: `${crypto.randomUUID()}-${Date.now()}-${index}`,
         name: file.name,
         url: URL.createObjectURL(file),
         size: file.size,
@@ -1089,7 +1089,7 @@ export default function WorkingApp() {
                       <Progress value={overallProgress} className="h-3 mb-2" />
                       <p className="text-sm text-gray-600">
                         {processingSteps[currentStep]?.description ||
-                          "جاري المعالج��..."}
+                          "جاري المعالجة..."}
                       </p>
                     </div>
 
