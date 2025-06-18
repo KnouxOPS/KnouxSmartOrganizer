@@ -96,7 +96,7 @@ async function loadAIModels(win) {
     win.webContents.send("models-loaded", true);
     return true;
   } catch (error) {
-    console.error("❌ فشل تحميل النماذج:", error);
+    console.error("❌ ��شل تحميل النماذج:", error);
     win.webContents.send("update-progress", `خطأ فادح: ${error.message}`);
     win.webContents.send("models-loaded", false);
     return false;
@@ -322,7 +322,7 @@ async function organizeImages(win) {
     return { success: false, message: "عملية أخرى قيد التنفيذ" };
   }
 
-  // التحقق من جاهزية النماذج أولاً
+  // التحقق من جاهزية الن��اذج أولاً
   if (!areModelsReady()) {
     win.webContents.send("update-progress", "❌ النماذج غير جاهزة بعد. الرجاء الانتظار حتى يكتمل التحميل.");
     return { success: false, message: "النماذج غير جاهزة بعد" };
@@ -707,8 +707,8 @@ app.whenReady().then(() => {
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     // Cleanup resources
-    if (ocrWorker) {
-      ocrWorker.terminate();
+    if (models.ocr) {
+      models.ocr.terminate();
     }
     app.quit();
   }
