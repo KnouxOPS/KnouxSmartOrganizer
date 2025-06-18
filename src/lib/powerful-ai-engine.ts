@@ -86,7 +86,7 @@ class PowerfulAIEngine {
       await this.loadImageClassifier();
 
       // 2. تحميل كاشف الوجوه
-      onProgress?.("👤 تحميل كاشف الوجوه والمشاعر...", 40);
+      onProgress?.("👤 ��حميل كاشف الوجوه والمشاعر...", 40);
       await this.loadFaceDetector();
 
       // 3. تحميل كاشف النصوص OCR
@@ -268,15 +268,21 @@ class PowerfulAIEngine {
   }
 
   /**
-   * تحميل كاشف النصوص
+   * تحميل كاشف ال��صوص
    */
   private async loadTextDetector(): Promise<void> {
     try {
-      // استخدام Tesseract.js للـ OCR
-      const tesseract = await import("tesseract.js");
-      this.models.textDetector = tesseract;
+      // محاولة استخدام Tesseract.js للـ OCR
+      const tesseract = await import("tesseract.js").catch(() => null);
+
+      if (tesseract) {
+        this.models.textDetector = tesseract;
+        return;
+      }
+
+      throw new Error("Tesseract not available");
     } catch (error) {
-      // Fallback إلى OCR مخصص
+      console.warn("Using fallback text detector:", error);
       this.models.textDetector = new SimpleTextDetector();
     }
   }
@@ -488,7 +494,7 @@ class PowerfulAIEngine {
       tags.push("عالي الجودة");
     }
 
-    result.tags = [...new Set(tags)]; // إزالة المتكررات
+    result.tags = [...new Set(tags)]; // إز��لة المتكررات
   }
 
   // Helper methods
@@ -696,7 +702,7 @@ class ColorAnalyzer {
 
 class SimpleNSFWDetector {
   async analyze(img: HTMLImageElement) {
-    // محاكاة كشف المحتوى الحساس (معظم الصور آمنة)
+    // محاكاة كشف المحت��ى الحساس (معظم الصور آمنة)
     return {
       score: Math.random() * 0.1, // درجة منخفضة للمحتوى الآمن
       isNSFW: false,
