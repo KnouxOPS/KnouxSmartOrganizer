@@ -9,6 +9,7 @@ import {
   ImageAnalysis,
   defaultAiSettings,
 } from "@/lib/ai-engine";
+import { simplifiedEngine } from "@/lib/simple-fallback-engine";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -279,7 +280,7 @@ function AnalysisCard({ analysis }: { analysis: ImageAnalysis }) {
               <div>
                 <h4 className="font-medium text-sm mb-2 flex items-center">
                   <Eye className="w-4 h-4 mr-1" />
-                  تحليل المحتو��:
+                  تحليل المحتوى:
                 </h4>
                 <div className="grid grid-cols-2 gap-1 text-xs">
                   {analysis.nsfw.map((item, index) => (
