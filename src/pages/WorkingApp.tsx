@@ -92,7 +92,7 @@ export default function WorkingApp() {
 
   // إعدادات
   const [autoProcess, setAutoProcess] = useState(true);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list" | "folders">("grid");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("date");
   const [filterCategory, setFilterCategory] = useState("all");
@@ -100,6 +100,15 @@ export default function WorkingApp() {
   const [showProcessedOnly, setShowProcessedOnly] = useState(false);
   const [theme, setTheme] = useState("light");
   const [dragActive, setDragActive] = useState(false);
+
+  // ميزات متقدمة
+  const [virtualFolders, setVirtualFolders] = useState<
+    Record<string, string[]>
+  >({});
+  const [duplicateGroups, setDuplicateGroups] = useState<any[]>([]);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
+  const [showDuplicatesPanel, setShowDuplicatesPanel] = useState(false);
+  const [autoOrganizeEnabled, setAutoOrganizeEnabled] = useState(true);
 
   // مراجع
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -288,8 +297,8 @@ export default function WorkingApp() {
           const image = targetImages[i];
           setCurrentFile(image.name);
 
-          // تحليل الذكاء الاصطناعي الحقيقي
-          const analysis = await realAIEngine.analyzeImage(image.file);
+          // تحليل الذكاء الاصطناعي المتطور
+          const analysis = await enhancedAIEngine.analyzeImage(image.file);
 
           // تحديث الصورة
           setImages((prev) =>
@@ -352,6 +361,14 @@ export default function WorkingApp() {
           `تم تحليل ${targetImages.length} صورة بنجاح`,
         );
 
+        // تنظيم تلقائي بعد المعالجة
+        if (autoOrganizeEnabled) {
+          autoOrganizeImages();
+        }
+
+        // كشف المتكررات
+        detectDuplicates();
+
         confetti({
           particleCount: 100,
           spread: 70,
@@ -366,8 +383,44 @@ export default function WorkingApp() {
         );
       }
     },
-    [images, addNotification],
+    [images, addNotification, autoOrganizeEnabled],
   );
+
+  // التنظيم التلقائي
+  const autoOrganizeImages = useCallback(() => {
+    const processedImages = images.filter(
+      (img) => img.processed && img.analysis,
+    );
+    const structure = enhancedAIEngine.generateSmartFolderStructure(
+      processedImages.map((img) => ({
+        id: img.id,
+        analysis: img.analysis!,
+        name: img.name,
+      })),
+    );
+
+    setVirtualFolders(structure);
+    addNotification(
+      "success",
+      "تم التنظيم التلقائي",
+      `تم إنشاء ${Object.keys(structure).length} مجلد ذكي`,
+    );
+  }, [images, addNotification]);
+
+  // كشف المتكررات
+  const detectDuplicates = useCallback(() => {
+    const imageIds = images.map((img) => img.id);
+    const duplicates = enhancedAIEngine.findDuplicates(imageIds);
+
+    setDuplicateGroups(duplicates);
+    if (duplicates.length > 0) {
+      addNotification(
+        "info",
+        "تم العثور على صور متكررة",
+        `${duplicates.length} مجموعة من الصور المتشابهة`,
+      );
+    }
+  }, [images, addNotification]);
 
   // إيقاف المعالجة
   const stopProcessing = useCallback(() => {
