@@ -166,7 +166,7 @@ export default function WorkingApp() {
       },
       {
         id: "categorization",
-        name: "الت��نيف",
+        name: "التصنيف",
         description: "تصنيف الصور",
         status: "pending",
         progress: 0,
@@ -590,44 +590,86 @@ export default function WorkingApp() {
         ))}
       </AnimatePresence>
 
-      {/* الرأس */}
-      <header className="border-b border-gray-200 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm sticky top-0 z-40">
+      {/* رأس التطبيق المحسن */}
+      <header className="border-b border-gray-200 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl shadow-lg">
-                <Brain className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl shadow-lg">
+                <Brain className="w-8 h-8 text-white" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Knoux SmartOrganizer - يعمل بالفعل!
+              <div className="space-y-1">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  Knoux SmartOrganizer
                 </h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  منظم الصور الذكي العامل 100%
+                <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                  <CheckCircle className="w-4 h-4 text-green-500 mr-1" />
+                  منظم الصور الذكي بتقنية الذكاء الاصطناعي
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <div className="flex items-center space-x-4">
+              {/* إحصائيات سريعة */}
+              <div className="hidden md:flex items-center space-x-6 px-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-xl">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-blue-600">
+                    {images.length}
+                  </div>
+                  <div className="text-xs text-gray-500">صورة</div>
+                </div>
+                <div className="w-px h-8 bg-gray-300"></div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-green-600">
+                    {stats.processed}
+                  </div>
+                  <div className="text-xs text-gray-500">محلل</div>
+                </div>
+                <div className="w-px h-8 bg-gray-300"></div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-purple-600">
+                    {stats.faces}
+                  </div>
+                  <div className="text-xs text-gray-500">وجه</div>
+                </div>
+              </div>
+
+              {/* مؤشر الحالة */}
+              <div className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-50 to-blue-50 dark:from-gray-700 dark:to-gray-800 rounded-xl border border-green-200">
                 {isProcessing ? (
-                  <Activity className="w-4 h-4 text-blue-500 animate-pulse" />
+                  <>
+                    <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />
+                    <div className="text-sm">
+                      <div className="font-medium text-blue-600">
+                        معالجة جارية
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {Math.round(overallProgress)}% مكتمل
+                      </div>
+                    </div>
+                  </>
                 ) : (
-                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <>
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <div className="text-sm">
+                      <div className="font-medium text-green-600">جاهز</div>
+                      <div className="text-xs text-gray-500">النظام نشط</div>
+                    </div>
+                  </>
                 )}
-                <span className="text-xs">
-                  {isProcessing
-                    ? `معالجة... ${Math.round(overallProgress)}%`
-                    : "جاهز"}
-                </span>
               </div>
 
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                className="p-2 rounded-xl"
               >
-                {theme === "light" ? "🌙" : "☀️"}
+                {theme === "light" ? (
+                  <div className="text-lg">🌙</div>
+                ) : (
+                  <div className="text-lg">☀️</div>
+                )}
               </Button>
             </div>
           </div>
@@ -1023,7 +1065,7 @@ export default function WorkingApp() {
                     <span>
                       مرتب حسب:{" "}
                       {sortBy === "date"
-                        ? "التار��خ"
+                        ? "التاريخ"
                         : sortBy === "name"
                           ? "الاسم"
                           : sortBy === "size"
