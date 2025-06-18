@@ -465,7 +465,7 @@ export default function PowerfulWorkingApp() {
               ),
             );
 
-            // إشعار لكل ��ورة تتم معالجتها
+            // إشعار لكل صورة تتم معالجتها
             if (processedImage.errors.length === 0) {
               addNotification(
                 "success",
@@ -799,10 +799,15 @@ export default function PowerfulWorkingApp() {
                   {aiInitialized ? (
                     <Badge
                       variant="secondary"
-                      className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                      className={cn(
+                        "text-white",
+                        usingSimpleAI
+                          ? "bg-blue-500 dark:bg-blue-600"
+                          : "bg-green-500 dark:bg-green-600",
+                      )}
                     >
                       <Sparkles className="w-3 h-3 mr-1" />
-                      AI جاهز
+                      {usingSimpleAI ? "AI مبسط" : "AI متقدم"}
                     </Badge>
                   ) : aiLoading ? (
                     <Badge
