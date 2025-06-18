@@ -341,7 +341,7 @@ function AnalysisCard({ analysis }: { analysis: ImageAnalysis }) {
                     <span>{Math.round(analysis.quality.contrast * 100)}%</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>السطوع:</span>
+                    <span>ا��سطوع:</span>
                     <span>
                       {Math.round(analysis.quality.brightness * 100)}%
                     </span>
@@ -506,7 +506,15 @@ export function OrganizerPage() {
           setStatus(`📊 جاري تحليل ${file.name}...`);
           setProgress((completedFiles / files.length) * 100);
 
-          const analysis = await aiEngine.analyze(file, settings);
+          let analysis;
+          if (usingFallback) {
+            // استخدام المحرك المبسط
+            analysis = await simplifiedEngine.analyze(file);
+          } else {
+            // استخدام المحرك المتقدم
+            analysis = await aiEngine.analyze(file, settings);
+          }
+
           setResults((prev) => [...prev, analysis]);
 
           completedFiles++;
