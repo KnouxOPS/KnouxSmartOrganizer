@@ -2,6 +2,10 @@ const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
 const path = require("path");
 const fs = require("fs/promises");
 const os = require("os");
+const Store = require("electron-store");
+
+// تهيئة مخزن الإعدادات
+const store = new Store();
 
 // --- AI Processing Libraries ---
 const sharp = require("sharp");
@@ -162,7 +166,7 @@ async function loadAIModels(win) {
 }
 
 // --- Comprehensive Image Analysis Function ---
-async function analyzeImage(filePath, fileName, win) {
+async function analyzeImage(filePath, fileName, win, settings = {}) {
   const results = {
     fileName,
     filePath,
@@ -225,57 +229,66 @@ async function analyzeImage(filePath, fileName, win) {
       results.errors.push(`Hash generation failed: ${e.message}`);
     }
 
-    // 2. NSFW Content Detection
-    try {
-      const tf = require("@tensorflow/tfjs-node");
-      const tensor = tf.node.decodeImage(imageBuffer, 3);
-      const predictions = await nsfwModel.classify(tensor);
-      tensor.dispose();
+    // 2. NSFW Content Detection - تشغيل شرطي
+    if (settings.runNsfw !== false) {
+      try {
+        const tf = require("@tensorflow/tfjs-node");
+        const tensor = tf.node.decodeImage(imageBuffer, 3);
+        const predictions = await nsfwModel.classify(tensor);
+        tensor.dispose();
 
-      const nsfwClasses = ["Porn", "Hentai"];
-      const maxNsfwScore = Math.max(
-        ...predictions
-          .filter((p) => nsfwClasses.includes(p.className))
-          .map((p) => p.probability),
-      );
+        const nsfwClasses = ["Porn", "Hentai"];
+        const maxNsfwScore = Math.max(
+          ...predictions
+            .filter((p) => nsfwClasses.includes(p.className))
+            .map((p) => p.probability),
+        );
 
-      results.nsfwScore = maxNsfwScore;
-      results.isNSFW = maxNsfwScore > 0.6;
-    } catch (e) {
-      results.errors.push(`NSFW detection failed: ${e.message}`);
+        results.nsfwScore = maxNsfwScore;
+        results.isNSFW = maxNsfwScore > (settings.nsfwThreshold || 0.6);
+      } catch (e) {
+        results.errors.push(`NSFW detection failed: ${e.message}`);
+      }
     }
 
-    // 3. Face Detection and Analysis
-    try {
-      const tf = require("@tensorflow/tfjs-node");
-      const tensor = tf.node.decodeImage(imageBuffer);
-      const detections = await faceapi
-        .detectAllFaces(tensor)
-        .withFaceLandmarks()
-        .withAgeAndGender();
-      tensor.dispose();
+    // 3. Face Detection and Analysis - تشغيل شرطي
+    if (settings.runFaces !== false) {
+      try {
+        const tf = require("@tensorflow/tfjs-node");
+        const tensor = tf.node.decodeImage(imageBuffer);
+        const detections = await faceapi
+          .detectAllFaces(tensor)
+          .withFaceLandmarks()
+          .withAgeAndGender();
+        tensor.dispose();
 
-      results.faces = detections.map((detection) => ({
-        confidence: detection.detection.score,
-        age: Math.round(detection.age),
-        gender: detection.gender,
-        genderConfidence: detection.genderProbability,
-        box: detection.detection.box,
-      }));
-    } catch (e) {
-      results.errors.push(`Face detection failed: ${e.message}`);
+        results.faces = detections
+          .filter(detection => detection.detection.score > (settings.faceConfidenceThreshold || 0.5))
+          .map((detection) => ({
+            confidence: detection.detection.score,
+            age: Math.round(detection.age),
+            gender: detection.gender,
+            genderConfidence: detection.genderProbability,
+            box: detection.detection.box,
+          }));
+      } catch (e) {
+        results.errors.push(`Face detection failed: ${e.message}`);
+      }
     }
 
-    // 4. OCR Text Extraction
-    try {
-      const ocrResult = await ocrWorker.recognize(imageBuffer);
-      results.text = ocrResult.data.text.trim();
-    } catch (e) {
-      results.errors.push(`OCR failed: ${e.message}`);
+    // 4. OCR Text Extraction - تشغيل شرطي
+    if (settings.runOcr !== false) {
+      try {
+        const ocrResult = await ocrWorker.recognize(imageBuffer);
+        results.text = ocrResult.data.text.trim();
+      } catch (e) {
+        results.errors.push(`OCR failed: ${e.message}`);
+      }
     }
 
-    // 5. Image Classification
-    try {
+    // 5. Image Classification - تشغيل شرطي
+    if (settings.runClassifier !== false) {
+      try {
       const candidateLabels = [
         "person",
         "selfie",
@@ -316,12 +329,14 @@ async function analyzeImage(filePath, fileName, win) {
       results.errors.push(`Classification failed: ${e.message}`);
     }
 
-    // 6. Generate Description
-    try {
-      const captionResult = await imageToTextGenerator(rawImage);
-      results.description = captionResult[0].generated_text;
-    } catch (e) {
-      results.errors.push(`Caption generation failed: ${e.message}`);
+    // 6. Generate Description - تشغيل شرطي
+    if (settings.runDescription !== false) {
+      try {
+        const captionResult = await imageToTextGenerator(rawImage);
+        results.description = captionResult[0].generated_text;
+      } catch (e) {
+        results.errors.push(`Caption generation failed: ${e.message}`);
+      }
     }
 
     // 7. Generate Tags and Smart Filename
@@ -335,15 +350,24 @@ async function analyzeImage(filePath, fileName, win) {
       ...(results.confidence > 0.8 ? ["high-confidence"] : []),
     ].filter(Boolean);
 
-    // Generate smart filename
+    // Generate smart filename باستخدام القالب المخصص
     const timestamp = new Date().toISOString().slice(0, 10);
-    const safeDescription = results.description
+    const safeDescription = (results.description || "image")
       .replace(/[^a-zA-Z0-9\s]/g, "")
       .replace(/\s+/g, "-")
       .slice(0, 30);
     const extension = path.extname(fileName);
 
-    results.suggestedName = `${timestamp}-${results.classification}-${safeDescription}${extension}`;
+    // استخدام قالب التسمية المخصص
+    const template = settings.renameTemplate || "{date}-{desc}";
+    let finalName = template
+      .replace("{date}", timestamp)
+      .replace("{desc}", safeDescription || "general")
+      .replace("{class}", results.classification || "image")
+      .replace("{faces}", results.faces.length.toString())
+      .replace("{confidence}", Math.round((results.confidence || 0) * 100).toString());
+
+    results.suggestedName = `${finalName}${extension}`;
     results.processed = true;
 
     return results;
@@ -361,6 +385,9 @@ async function organizeImages(win) {
   }
 
   isProcessing = true;
+
+  // جلب الإعدادات الحديثة
+  const settings = store.get("settings", {});
 
   const logTimestamp = new Date().toISOString().replace(/:/g, "-");
   const logFilePath = path.join(
@@ -390,7 +417,7 @@ async function organizeImages(win) {
   };
 
   try {
-    writeLog("��� البحث عن الصور في مجلد المصدر...");
+    writeLog("🔍 البحث عن الصور في مجلد المصدر...");
 
     // Find all image files
     const imageExtensions = [
@@ -427,7 +454,7 @@ async function organizeImages(win) {
       );
       win.webContents.send("update-progress-percent", progress);
 
-      const analysis = await analyzeImage(filePath, fileName, win);
+      const analysis = await analyzeImage(filePath, fileName, win, settings);
 
       if (analysis.processed) {
         stats.processed++;
@@ -443,15 +470,17 @@ async function organizeImages(win) {
         }
         stats.classifications[analysis.classification]++;
 
-        // Check for duplicates
-        if (analysis.hash && imageHashes.has(analysis.hash)) {
-          analysis.isDuplicate = true;
-          stats.duplicates++;
-          writeLog(
-            `  🔄 صورة مكررة: ${fileName} (مماثلة لـ ${imageHashes.get(analysis.hash)})`,
-          );
-        } else if (analysis.hash) {
-          imageHashes.set(analysis.hash, fileName);
+        // Check for duplicates - تشغيل شرطي
+        if (settings.runDuplicates !== false && analysis.hash) {
+          if (imageHashes.has(analysis.hash)) {
+            analysis.isDuplicate = true;
+            stats.duplicates++;
+            writeLog(
+              `  🔄 صورة مكررة: ${fileName} (مماثلة لـ ${imageHashes.get(analysis.hash)})`,
+            );
+          } else {
+            imageHashes.set(analysis.hash, fileName);
+          }
         }
 
         // Determine classification folder
@@ -515,6 +544,16 @@ async function organizeImages(win) {
 
         stats.moved++;
 
+        // حذف الملف الأصلي إذا كان مفعلاً
+        if (settings.deleteOriginals) {
+          try {
+            await fs.unlink(filePath);
+            writeLog(`  🗑️ تم حذف الملف الأصلي: ${fileName}`);
+          } catch (deleteError) {
+            writeLog(`  ⚠️ فشل في حذف الملف الأصلي: ${deleteError.message}`);
+          }
+        }
+
         writeLog(
           `  ✅ تم التصنيف: ${targetFolder} | الوجوه: ${analysis.faces.length} | النص: ${analysis.text.length > 0 ? "نعم" : "لا"}`,
         );
@@ -541,6 +580,11 @@ async function organizeImages(win) {
     // Save log file
     await fs.writeFile(logFilePath, logContent);
 
+    // حفظ إحصائيات المعالجة
+    const processingTime = Date.now() - Date.parse(logTimestamp.replace(/-/g, ':'));
+    store.set("lastProcessed", new Date().toISOString());
+    store.set("totalProcessingTime", store.get("totalProcessingTime", 0) + processingTime);
+
     win.webContents.send("organization-complete", { success: true, stats });
 
     return { success: true, stats, logPath: logFilePath };
@@ -564,10 +608,10 @@ async function organizeImages(win) {
 // --- Electron App Setup ---
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    minWidth: 800,
-    minHeight: 600,
+    width: 1400,
+    height: 900,
+    minWidth: 1000,
+    minHeight: 750,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
@@ -601,7 +645,40 @@ function createWindow() {
   return win;
 }
 
-// --- IPC Handlers ---
+// --- IPC Handlers للإعدادات والوظائف الجديدة ---
+
+// جلب الإعدادات المحفوظة
+ipcMain.handle("get-settings", () => {
+  return store.get("settings", {
+    // قيم افتراضية
+    runClassifier: true,
+    runDescription: true,
+    runNsfw: true,
+    runFaces: true,
+    runOcr: true,
+    runDuplicates: true,
+    nsfwThreshold: 0.7, // عتبة الحساسية
+    renameTemplate: "{date}-{desc}", // قالب إعادة التسمية
+    deleteOriginals: false, // خيار لحذف الصور الأصلية بعد النقل
+    classificationThreshold: 0.3, // حد الثقة للتصنيف
+    faceConfidenceThreshold: 0.5, // حد الثقة لكشف الوجوه
+    textMinLength: 30, // الحد الأدنى لطول النص
+  });
+});
+
+// حفظ الإعدادات
+ipcMain.handle("set-settings", (event, settings) => {
+  store.set("settings", settings);
+  return true;
+});
+
+// فتح مجلد في مستكشف الملفات
+ipcMain.handle("open-folder", (event, folderPath) => {
+  const fullPath = path.resolve(folderPath);
+  shell.openPath(fullPath);
+});
+
+// جلب معلومات التطبيق
 ipcMain.handle("get-app-info", () => {
   return {
     version: app.getVersion(),
@@ -629,6 +706,33 @@ ipcMain.handle("select-source-folder", async () => {
 ipcMain.handle("run-organization", async (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   return await organizeImages(win);
+});
+
+// إحصائيات متقدمة
+ipcMain.handle("get-advanced-stats", async () => {
+  try {
+    const stats = {
+      totalFiles: 0,
+      processedFiles: 0,
+      folderSizes: {},
+      lastProcessed: store.get("lastProcessed", null),
+      totalProcessingTime: store.get("totalProcessingTime", 0),
+    };
+
+    // حساب أحجام المجلدات
+    for (const [key, folderPath] of Object.entries(APP_DIRS.images)) {
+      try {
+        const files = await fs.readdir(folderPath);
+        stats.folderSizes[key] = files.length;
+      } catch (error) {
+        stats.folderSizes[key] = 0;
+      }
+    }
+
+    return stats;
+  } catch (error) {
+    return { error: error.message };
+  }
 });
 
 ipcMain.handle("open-folder", async (event, folderType) => {
