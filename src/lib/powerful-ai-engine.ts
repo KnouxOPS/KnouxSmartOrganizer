@@ -86,7 +86,7 @@ class PowerfulAIEngine {
       await this.loadImageClassifier();
 
       // 2. تحميل كاشف الوجوه
-      onProgress?.("👤 ��حميل كاشف الوجوه والمشاعر...", 40);
+      onProgress?.("👤 تحميل كاشف الوجوه والمشاعر...", 40);
       await this.loadFaceDetector();
 
       // 3. تحميل كاشف النصوص OCR
@@ -268,7 +268,7 @@ class PowerfulAIEngine {
   }
 
   /**
-   * تحميل كاشف ال��صوص
+   * تحميل كاشف النصوص
    */
   private async loadTextDetector(): Promise<void> {
     try {
@@ -299,12 +299,18 @@ class PowerfulAIEngine {
    */
   private async loadNSFWDetector(): Promise<void> {
     try {
-      // استخدام NSFWJS
-      const nsfwjs = await import("nsfwjs");
-      const tf = await import("@tensorflow/tfjs");
-      this.models.nsfwDetector = await nsfwjs.load();
+      // محاولة استخدام NSFWJS
+      const nsfwjs = await import("nsfwjs").catch(() => null);
+      const tf = await import("@tensorflow/tfjs").catch(() => null);
+
+      if (nsfwjs && tf && typeof window !== "undefined") {
+        this.models.nsfwDetector = await nsfwjs.load();
+        return;
+      }
+
+      throw new Error("NSFWJS not available");
     } catch (error) {
-      // Fallback إلى كاشف مخصص
+      console.warn("Using fallback NSFW detector:", error);
       this.models.nsfwDetector = new SimpleNSFWDetector();
     }
   }
@@ -494,7 +500,7 @@ class PowerfulAIEngine {
       tags.push("عالي الجودة");
     }
 
-    result.tags = [...new Set(tags)]; // إز��لة المتكررات
+    result.tags = [...new Set(tags)]; // إزالة المتكررات
   }
 
   // Helper methods
@@ -702,7 +708,7 @@ class ColorAnalyzer {
 
 class SimpleNSFWDetector {
   async analyze(img: HTMLImageElement) {
-    // محاكاة كشف المحت��ى الحساس (معظم الصور آمنة)
+    // محاكاة كشف المحتوى الحساس (معظم الصور آمنة)
     return {
       score: Math.random() * 0.1, // درجة منخفضة للمحتوى الآمن
       isNSFW: false,
