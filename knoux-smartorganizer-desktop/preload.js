@@ -1,21 +1,48 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
-// Expose protected methods that allow the renderer process to use
-// the ipcRenderer without exposing the entire object
+// Expose secure API to renderer process
 contextBridge.exposeInMainWorld("electronAPI", {
-  organizeImages: () => ipcRenderer.invoke("organize-images"),
-  getStats: () => ipcRenderer.invoke("get-stats"),
-  openFolder: (folderType) => ipcRenderer.invoke("open-folder", folderType),
-  selectRawFolder: () => ipcRenderer.invoke("select-raw-folder"),
+  // App Information
+  getAppInfo: () => ipcRenderer.invoke("get-app-info"),
 
-  // Listen for events
-  onProgressUpdate: (callback) =>
-    ipcRenderer.on("processing-progress", callback),
-  onNewImage: (callback) => ipcRenderer.on("new-image-detected", callback),
+  // Folder Operations
+  selectSourceFolder: () => ipcRenderer.invoke("select-source-folder"),
+  openFolder: (folderType) => ipcRenderer.invoke("open-folder", folderType),
+
+  // AI Processing
+  runOrganization: () => ipcRenderer.invoke("run-organization"),
+  getStatistics: () => ipcRenderer.invoke("get-statistics"),
+
+  // Event Listeners
+  onUpdateProgress: (callback) => {
+    ipcRenderer.on("update-progress", (_event, message) => callback(message));
+  },
+
+  onUpdateProgressPercent: (callback) => {
+    ipcRenderer.on("update-progress-percent", (_event, percent) =>
+      callback(percent),
+    );
+  },
+
+  onModelsLoaded: (callback) => {
+    ipcRenderer.on("models-loaded", (_event, loaded) => callback(loaded));
+  },
+
+  onOrganizationComplete: (callback) => {
+    ipcRenderer.on("organization-complete", (_event, result) =>
+      callback(result),
+    );
+  },
 
   // Remove listeners
-  removeProgressListener: () =>
-    ipcRenderer.removeAllListeners("processing-progress"),
-  removeNewImageListener: () =>
-    ipcRenderer.removeAllListeners("new-image-detected"),
+  removeAllListeners: (channel) => {
+    ipcRenderer.removeAllListeners(channel);
+  },
 });
+
+// Security: Remove Node.js globals
+delete window.require;
+delete window.exports;
+delete window.module;
+
+console.log("🔒 Preload script loaded - Secure API bridge established");

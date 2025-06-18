@@ -1,45 +1,32 @@
 {
   "name": "knoux-smartorganizer-pro",
   "version": "1.0.0",
-  "description": "AI-Powered Desktop Photo Organizer",
+  "description": "تطبيق مكتبي لترتيب الصور وتصنيفها باستخدام الذكاء الاصطناعي",
   "main": "main.js",
-  "homepage": ".",
   "scripts": {
     "start": "electron .",
-    "dev": "concurrently \"npm run react-dev\" \"wait-on http://localhost:3000 && electron .\"",
-    "react-dev": "cd ui && npm start",
-    "react-build": "cd ui && npm run build",
-    "build": "npm run react-build && electron-builder",
-    "build-win": "npm run react-build && electron-builder --win",
-    "build-mac": "npm run react-build && electron-builder --mac",
-    "postinstall": "cd ui && npm install"
+    "build": "electron-builder",
+    "install-deps": "npm install",
+    "dev": "electron . --dev"
   },
-  "keywords": [
-    "ai",
-    "photo-organizer",
-    "electron",
-    "desktop",
-    "knoux"
-  ],
-  "author": "Knoux Technologies",
+  "author": "Knoux SmartOrganizer Team",
   "license": "MIT",
-  "devDependencies": {
-    "concurrently": "^7.6.0",
-    "electron": "^22.0.0",
-    "electron-builder": "^24.0.0",
-    "wait-on": "^7.0.1"
-  },
   "dependencies": {
-    "@tensorflow/tfjs-node": "^4.10.0",
     "@vladmandic/face-api": "^1.7.13",
-    "tesseract.js": "^4.1.1",
-    "nsfwjs": "^2.4.2",
-    "sharp": "^0.32.6",
-    "fs-extra": "^11.1.1",
+    "@tensorflow/tfjs-node": "^4.20.0",
+    "@xenova/transformers": "^2.17.1",
+    "canvas": "^2.11.2",
+    "image-hash": "^5.3.1",
+    "nsfwjs": "^4.1.0",
+    "sharp": "^0.33.4",
+    "tesseract.js": "^5.1.0",
     "chokidar": "^3.5.3",
-    "blockhash-core": "^1.2.0",
-    "winston": "^3.8.2",
-    "electron-store": "^8.1.0"
+    "glob": "^10.3.0",
+    "exif-parser": "^0.1.12"
+  },
+  "devDependencies": {
+    "electron": "^31.0.2",
+    "electron-builder": "^24.13.3"
   },
   "build": {
     "appId": "com.knoux.smartorganizer",
@@ -48,11 +35,10 @@
       "output": "dist"
     },
     "files": [
-      "main.js",
-      "preload.js",
-      "ai-engine.js",
-      "ui/build/**/*",
-      "models/**/*"
+      "**/*",
+      "!node_modules/@vladmandic/face-api/model/*",
+      "node_modules/@vladmandic/face-api/model/ssd_mobilenetv1_model-weights_manifest.json",
+      "node_modules/@vladmandic/face-api/model/face_landmark_68_model-weights_manifest.json"
     ],
     "win": {
       "target": "nsis",
@@ -62,9 +48,9 @@
       "target": "dmg",
       "icon": "assets/icon.icns"
     },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png"
     }
   }
 }

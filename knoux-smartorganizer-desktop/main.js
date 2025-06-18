@@ -1,354 +1,673 @@
-const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
 const path = require("path");
-const fs = require("fs-extra");
+const fs = require("fs/promises");
+const os = require("os");
+
+// --- AI Processing Libraries ---
+const sharp = require("sharp");
+const { pipeline, RawImage } = require("@xenova/transformers");
+const { createWorker } = require("tesseract.js");
+const nsfw = require("nsfwjs");
+const faceapi = require("@vladmandic/face-api");
+const { phash } = require("image-hash");
+const glob = require("glob");
 const chokidar = require("chokidar");
-const { AIEngine } = require("./ai-engine");
-const winston = require("winston");
+const ExifParser = require("exif-parser");
 
-// Configure logging
-const logger = winston.createLogger({
-  level: "info",
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.printf(({ timestamp, level, message }) => {
-      return `${timestamp} [${level.toUpperCase()}]: ${message}`;
-    }),
-  ),
-  transports: [
-    new winston.transports.Console(),
-    new winston.transports.File({ filename: "logs/app.log" }),
-  ],
-});
+// --- Global AI Models ---
+let classifier, imageToTextGenerator, nsfwModel, ocrWorker;
+let modelsLoaded = false;
+let isProcessing = false;
 
-class KnouxSmartOrganizer {
-  constructor() {
-    this.mainWindow = null;
-    this.aiEngine = new AIEngine();
-    this.isProcessing = false;
-    this.basePath = path.join(app.getPath("documents"), "KnouxSmartOrganizer");
+// --- Application Directories ---
+const APP_DIRS = {
+  root: app.getAppPath(),
+  images: {
+    raw: path.join(os.homedir(), "KnouxOrganizer", "images", "raw"),
+    processed: path.join(os.homedir(), "KnouxOrganizer", "images", "processed"),
+    classified: path.join(
+      os.homedir(),
+      "KnouxOrganizer",
+      "images",
+      "classified",
+    ),
+    duplicates: path.join(
+      os.homedir(),
+      "KnouxOrganizer",
+      "images",
+      "duplicates",
+    ),
+    rejected: path.join(os.homedir(), "KnouxOrganizer", "images", "rejected"),
+  },
+  logs: path.join(os.homedir(), "KnouxOrganizer", "logs"),
+  models: path.join(os.homedir(), ".cache", "huggingface", "hub"),
+  temp: path.join(os.homedir(), "KnouxOrganizer", "temp"),
+};
 
-    this.initializeFolders();
-    this.setupWatcher();
-  }
+const CLASSIFICATION_FOLDERS = {
+  selfies: "الصور الشخصية",
+  nature: "الطبيعة والمناظر",
+  food: "الطعام والمشروبات",
+  documents: "الوثائق والنصوص",
+  screenshots: "لقطات الشاشة",
+  animals: "الحيوانات",
+  vehicles: "المركبات",
+  buildings: "المباني والعمارة",
+  others: "أخرى",
+};
 
-  async initializeFolders() {
-    const folders = [
-      "images/raw",
-      "images/renamed",
-      "images/classified/nsfw",
-      "images/classified/selfies",
-      "images/classified/documents",
-      "images/classified/duplicates",
-      "images/classified/nature",
-      "images/classified/food",
-      "images/classified/screenshots",
-      "images/classified/general",
-      "logs",
-      "models",
-    ];
-
-    for (const folder of folders) {
-      const fullPath = path.join(this.basePath, folder);
-      await fs.ensureDir(fullPath);
-      logger.info(`Created/verified folder: ${fullPath}`);
-    }
-  }
-
-  setupWatcher() {
-    const rawImagesPath = path.join(this.basePath, "images/raw");
-
-    this.watcher = chokidar.watch(rawImagesPath, {
-      ignored: /(^|[\/\\])\../, // ignore dotfiles
-      persistent: true,
-    });
-
-    this.watcher.on("add", (filePath) => {
-      logger.info(`New image detected: ${filePath}`);
-      if (this.mainWindow) {
-        this.mainWindow.webContents.send("new-image-detected", filePath);
-      }
-    });
-  }
-
-  createWindow() {
-    this.mainWindow = new BrowserWindow({
-      width: 1200,
-      height: 800,
-      webPreferences: {
-        nodeIntegration: false,
-        contextIsolation: true,
-        preload: path.join(__dirname, "preload.js"),
-      },
-      icon: path.join(__dirname, "assets", "icon.png"),
-      titleBarStyle: "default",
-      show: false,
-    });
-
-    // Load the React app
-    const isDev = process.env.NODE_ENV === "development";
-    if (isDev) {
-      this.mainWindow.loadURL("http://localhost:3000");
-      this.mainWindow.webContents.openDevTools();
-    } else {
-      this.mainWindow.loadFile(path.join(__dirname, "ui/build/index.html"));
+// --- Initialize Application Directories ---
+async function initializeDirectories() {
+  try {
+    for (const dirPath of Object.values(APP_DIRS.images)) {
+      await fs.mkdir(dirPath, { recursive: true });
     }
 
-    this.mainWindow.once("ready-to-show", () => {
-      this.mainWindow.show();
-      logger.info("Main window created and shown");
-    });
-
-    this.mainWindow.on("closed", () => {
-      this.mainWindow = null;
-    });
-  }
-
-  async organizeImages() {
-    if (this.isProcessing) {
-      return { error: "Already processing images" };
+    for (const folderKey of Object.keys(CLASSIFICATION_FOLDERS)) {
+      await fs.mkdir(path.join(APP_DIRS.images.classified, folderKey), {
+        recursive: true,
+      });
     }
 
-    this.isProcessing = true;
-    const startTime = Date.now();
-    const sessionId = `session-${startTime}`;
+    await fs.mkdir(APP_DIRS.logs, { recursive: true });
+    await fs.mkdir(APP_DIRS.temp, { recursive: true });
 
-    logger.info(`Starting image organization session: ${sessionId}`);
-
-    try {
-      // Initialize AI models
-      await this.aiEngine.initialize();
-
-      // Get images from raw folder
-      const rawPath = path.join(this.basePath, "images/raw");
-      const imageFiles = await this.getImageFiles(rawPath);
-
-      if (imageFiles.length === 0) {
-        return {
-          error: "No images found in raw folder",
-          path: rawPath,
-        };
-      }
-
-      logger.info(`Found ${imageFiles.length} images to process`);
-
-      const results = {
-        total: imageFiles.length,
-        processed: 0,
-        successful: 0,
-        errors: 0,
-        categories: {
-          nsfw: 0,
-          selfies: 0,
-          documents: 0,
-          duplicates: 0,
-          nature: 0,
-          food: 0,
-          screenshots: 0,
-          general: 0,
-        },
-        processingTime: 0,
-        sessionId,
-      };
-
-      // Process each image
-      for (let i = 0; i < imageFiles.length; i++) {
-        const imagePath = imageFiles[i];
-
-        try {
-          // Send progress update
-          if (this.mainWindow) {
-            this.mainWindow.webContents.send("processing-progress", {
-              current: i + 1,
-              total: imageFiles.length,
-              currentFile: path.basename(imagePath),
-            });
-          }
-
-          const analysis = await this.aiEngine.analyzeImage(imagePath);
-          const category = this.aiEngine.categorizeImage(analysis);
-          const newName = this.aiEngine.generateSmartFilename(
-            analysis,
-            imagePath,
-          );
-
-          // Move and rename image
-          const destinationFolder = path.join(
-            this.basePath,
-            "images/classified",
-            category,
-          );
-          const newPath = path.join(destinationFolder, newName);
-
-          await fs.move(imagePath, newPath, { overwrite: true });
-
-          // Also create renamed copy
-          const renamedPath = path.join(
-            this.basePath,
-            "images/renamed",
-            newName,
-          );
-          await fs.copy(newPath, renamedPath, { overwrite: true });
-
-          results.categories[category]++;
-          results.successful++;
-
-          logger.info(
-            `Processed: ${path.basename(imagePath)} -> ${category}/${newName}`,
-          );
-        } catch (error) {
-          logger.error(`Failed to process ${imagePath}: ${error.message}`);
-          results.errors++;
-        }
-
-        results.processed++;
-      }
-
-      results.processingTime = Date.now() - startTime;
-
-      // Save session log
-      const logPath = path.join(this.basePath, "logs", `${sessionId}.json`);
-      await fs.writeJson(logPath, results, { spaces: 2 });
-
-      logger.info(`Session completed: ${JSON.stringify(results)}`);
-
-      return results;
-    } catch (error) {
-      logger.error(`Organization failed: ${error.message}`);
-      return { error: error.message };
-    } finally {
-      this.isProcessing = false;
-    }
-  }
-
-  async getImageFiles(directory) {
-    const files = await fs.readdir(directory);
-    const imageExtensions = [
-      ".jpg",
-      ".jpeg",
-      ".png",
-      ".gif",
-      ".webp",
-      ".bmp",
-      ".tiff",
-    ];
-
-    return files
-      .filter((file) =>
-        imageExtensions.some((ext) => file.toLowerCase().endsWith(ext)),
-      )
-      .map((file) => path.join(directory, file));
-  }
-
-  async getStats() {
-    try {
-      const rawPath = path.join(this.basePath, "images/raw");
-      const classifiedPath = path.join(this.basePath, "images/classified");
-
-      const rawImages = await this.getImageFiles(rawPath);
-
-      const categories = [
-        "nsfw",
-        "selfies",
-        "documents",
-        "duplicates",
-        "nature",
-        "food",
-        "screenshots",
-        "general",
-      ];
-      const categoryCounts = {};
-
-      for (const category of categories) {
-        const categoryPath = path.join(classifiedPath, category);
-        try {
-          const images = await this.getImageFiles(categoryPath);
-          categoryCounts[category] = images.length;
-        } catch {
-          categoryCounts[category] = 0;
-        }
-      }
-
-      return {
-        rawImages: rawImages.length,
-        categorized: categoryCounts,
-        basePath: this.basePath,
-      };
-    } catch (error) {
-      logger.error(`Failed to get stats: ${error.message}`);
-      return { error: error.message };
-    }
+    console.log("✅ تم تهيئة جميع المجلدات بنجاح");
+    return true;
+  } catch (error) {
+    console.error("❌ خطأ في تهيئة المجلدات:", error);
+    return false;
   }
 }
 
-// Create app instance
-const smartOrganizer = new KnouxSmartOrganizer();
+// --- Load AI Models ---
+async function loadAIModels(win) {
+  if (modelsLoaded) return true;
 
-// App event handlers
+  try {
+    win.webContents.send(
+      "update-progress",
+      "بدء تحميل نماذج الذكاء الاصطناعي...",
+    );
+
+    // 1. Image Classification Model
+    win.webContents.send(
+      "update-progress",
+      "تحميل نموذج تصنيف الصور (CLIP)...",
+    );
+    classifier = await pipeline(
+      "zero-shot-image-classification",
+      "Xenova/clip-vit-base-patch32",
+    );
+
+    // 2. Image Captioning Model
+    win.webContents.send(
+      "update-progress",
+      "تحميل نموذج وصف الصور (Vision-GPT)...",
+    );
+    imageToTextGenerator = await pipeline(
+      "image-to-text",
+      "Xenova/vit-gpt2-image-captioning",
+    );
+
+    // 3. NSFW Detection Model
+    win.webContents.send(
+      "update-progress",
+      "تحميل نموذج كشف المحتوى الحساس...",
+    );
+    nsfwModel = await nsfw.load();
+
+    // 4. Face Detection Models
+    win.webContents.send("update-progress", "تحميل نماذج كشف الوجوه...");
+    const modelPath = path.join(
+      __dirname,
+      "node_modules",
+      "@vladmandic",
+      "face-api",
+      "model",
+    );
+    await faceapi.nets.ssdMobilenetv1.loadFromDisk(modelPath);
+    await faceapi.nets.faceLandmark68Net.loadFromDisk(modelPath);
+    await faceapi.nets.faceRecognitionNet.loadFromDisk(modelPath);
+    await faceapi.nets.ageGenderNet.loadFromDisk(modelPath);
+
+    // 5. OCR Worker
+    win.webContents.send(
+      "update-progress",
+      "تهيئة محرك التعرف على النصوص (OCR)...",
+    );
+    ocrWorker = await createWorker();
+    await ocrWorker.loadLanguage("eng+ara");
+    await ocrWorker.initialize("eng+ara");
+
+    // Setup TensorFlow.js environment for face-api
+    const tf = require("@tensorflow/tfjs-node");
+    const { Canvas, Image, ImageData } = require("canvas");
+    faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
+
+    modelsLoaded = true;
+    win.webContents.send(
+      "update-progress",
+      "🎉 جميع نماذج الذكاء الاصطناعي جاهزة للاستخدام!",
+    );
+    win.webContents.send("models-loaded", true);
+
+    return true;
+  } catch (error) {
+    console.error("❌ فشل تحميل النماذج:", error);
+    win.webContents.send("update-progress", `خطأ فادح: ${error.message}`);
+    win.webContents.send("models-loaded", false);
+    return false;
+  }
+}
+
+// --- Comprehensive Image Analysis Function ---
+async function analyzeImage(filePath, fileName, win) {
+  const results = {
+    fileName,
+    filePath,
+    processed: false,
+    classification: "unknown",
+    description: "",
+    confidence: 0,
+    faces: [],
+    text: "",
+    isNSFW: false,
+    nsfwScore: 0,
+    isDuplicate: false,
+    hash: "",
+    metadata: {},
+    suggestedName: "",
+    tags: [],
+    errors: [],
+  };
+
+  try {
+    // Read image file
+    const imageBuffer = await fs.readFile(filePath);
+    const imageStats = await fs.stat(filePath);
+
+    // Extract metadata
+    try {
+      const parser = ExifParser.create(imageBuffer);
+      const exifData = parser.parse();
+      results.metadata = {
+        size: imageStats.size,
+        created: imageStats.birthtime,
+        modified: imageStats.mtime,
+        exif: exifData,
+      };
+    } catch (e) {
+      results.metadata = {
+        size: imageStats.size,
+        created: imageStats.birthtime,
+        modified: imageStats.mtime,
+      };
+    }
+
+    // Process image with Sharp
+    const { data, info } = await sharp(imageBuffer)
+      .resize(640, 640, { fit: "inside", withoutEnlargement: true })
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    const rawImage = new RawImage(data, info.width, info.height, info.channels);
+
+    // 1. Generate perceptual hash for duplicate detection
+    try {
+      results.hash = await new Promise((resolve, reject) => {
+        phash(filePath, (err, hash) => {
+          if (err) reject(err);
+          else resolve(hash);
+        });
+      });
+    } catch (e) {
+      results.errors.push(`Hash generation failed: ${e.message}`);
+    }
+
+    // 2. NSFW Content Detection
+    try {
+      const tf = require("@tensorflow/tfjs-node");
+      const tensor = tf.node.decodeImage(imageBuffer, 3);
+      const predictions = await nsfwModel.classify(tensor);
+      tensor.dispose();
+
+      const nsfwClasses = ["Porn", "Hentai"];
+      const maxNsfwScore = Math.max(
+        ...predictions
+          .filter((p) => nsfwClasses.includes(p.className))
+          .map((p) => p.probability),
+      );
+
+      results.nsfwScore = maxNsfwScore;
+      results.isNSFW = maxNsfwScore > 0.6;
+    } catch (e) {
+      results.errors.push(`NSFW detection failed: ${e.message}`);
+    }
+
+    // 3. Face Detection and Analysis
+    try {
+      const tf = require("@tensorflow/tfjs-node");
+      const tensor = tf.node.decodeImage(imageBuffer);
+      const detections = await faceapi
+        .detectAllFaces(tensor)
+        .withFaceLandmarks()
+        .withAgeAndGender();
+      tensor.dispose();
+
+      results.faces = detections.map((detection) => ({
+        confidence: detection.detection.score,
+        age: Math.round(detection.age),
+        gender: detection.gender,
+        genderConfidence: detection.genderProbability,
+        box: detection.detection.box,
+      }));
+    } catch (e) {
+      results.errors.push(`Face detection failed: ${e.message}`);
+    }
+
+    // 4. OCR Text Extraction
+    try {
+      const ocrResult = await ocrWorker.recognize(imageBuffer);
+      results.text = ocrResult.data.text.trim();
+    } catch (e) {
+      results.errors.push(`OCR failed: ${e.message}`);
+    }
+
+    // 5. Image Classification
+    try {
+      const candidateLabels = [
+        "person",
+        "selfie",
+        "portrait",
+        "people",
+        "nature",
+        "landscape",
+        "outdoor",
+        "tree",
+        "sky",
+        "food",
+        "meal",
+        "drink",
+        "restaurant",
+        "document",
+        "text",
+        "paper",
+        "screenshot",
+        "animal",
+        "pet",
+        "dog",
+        "cat",
+        "car",
+        "vehicle",
+        "transportation",
+        "building",
+        "architecture",
+        "house",
+        "sport",
+        "game",
+        "activity",
+      ];
+
+      const classificationResult = await classifier(rawImage, candidateLabels);
+      results.classification = classificationResult[0].label;
+      results.confidence = classificationResult[0].score;
+    } catch (e) {
+      results.errors.push(`Classification failed: ${e.message}`);
+    }
+
+    // 6. Generate Description
+    try {
+      const captionResult = await imageToTextGenerator(rawImage);
+      results.description = captionResult[0].generated_text;
+    } catch (e) {
+      results.errors.push(`Caption generation failed: ${e.message}`);
+    }
+
+    // 7. Generate Tags and Smart Filename
+    results.tags = [
+      results.classification,
+      ...(results.faces.length > 0
+        ? ["faces", `${results.faces.length}-people`]
+        : []),
+      ...(results.text.length > 30 ? ["text", "document"] : []),
+      ...(results.isNSFW ? ["nsfw"] : []),
+      ...(results.confidence > 0.8 ? ["high-confidence"] : []),
+    ].filter(Boolean);
+
+    // Generate smart filename
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const safeDescription = results.description
+      .replace(/[^a-zA-Z0-9\s]/g, "")
+      .replace(/\s+/g, "-")
+      .slice(0, 30);
+    const extension = path.extname(fileName);
+
+    results.suggestedName = `${timestamp}-${results.classification}-${safeDescription}${extension}`;
+    results.processed = true;
+
+    return results;
+  } catch (error) {
+    results.errors.push(`General processing failed: ${error.message}`);
+    return results;
+  }
+}
+
+// --- Smart Organization Function ---
+async function organizeImages(win) {
+  if (isProcessing) {
+    win.webContents.send("update-progress", "عملية أخرى قيد التنفيذ...");
+    return { success: false, message: "عملية أخرى قيد التنفيذ" };
+  }
+
+  isProcessing = true;
+
+  const logTimestamp = new Date().toISOString().replace(/:/g, "-");
+  const logFilePath = path.join(
+    APP_DIRS.logs,
+    `organization-${logTimestamp}.log`,
+  );
+  let logContent = `--- بدء جلسة التنظيم: ${new Date().toLocaleString("ar")} ---\n\n`;
+
+  const stats = {
+    total: 0,
+    processed: 0,
+    faces: 0,
+    nsfw: 0,
+    documents: 0,
+    duplicates: 0,
+    moved: 0,
+    errors: 0,
+    classifications: {},
+  };
+
+  const imageHashes = new Map();
+
+  const writeLog = (message) => {
+    console.log(message);
+    logContent += `${message}\n`;
+    win.webContents.send("update-progress", message);
+  };
+
+  try {
+    writeLog("��� البحث عن الصور في مجلد المصدر...");
+
+    // Find all image files
+    const imageExtensions = [
+      "jpg",
+      "jpeg",
+      "png",
+      "bmp",
+      "gif",
+      "webp",
+      "tiff",
+    ];
+    const pattern = path.join(
+      APP_DIRS.images.raw,
+      `**/*.{${imageExtensions.join(",")}}`,
+    );
+    const imageFiles = glob.sync(pattern, { nocase: true });
+
+    stats.total = imageFiles.length;
+
+    if (imageFiles.length === 0) {
+      writeLog("⚠️ لم يتم العثور على أي صور في مجلد المصدر");
+      return { success: false, message: "لا توجد صور للمعالجة", stats };
+    }
+
+    writeLog(`📊 تم العثور على ${imageFiles.length} صورة للمعالجة`);
+
+    // Process each image
+    for (const [index, filePath] of imageFiles.entries()) {
+      const fileName = path.basename(filePath);
+      const progress = Math.round(((index + 1) / imageFiles.length) * 100);
+
+      writeLog(
+        `[${index + 1}/${imageFiles.length}] (${progress}%) معالجة: ${fileName}`,
+      );
+      win.webContents.send("update-progress-percent", progress);
+
+      const analysis = await analyzeImage(filePath, fileName, win);
+
+      if (analysis.processed) {
+        stats.processed++;
+
+        // Update statistics
+        if (analysis.faces.length > 0) stats.faces += analysis.faces.length;
+        if (analysis.isNSFW) stats.nsfw++;
+        if (analysis.text.length > 50) stats.documents++;
+
+        // Track classifications
+        if (!stats.classifications[analysis.classification]) {
+          stats.classifications[analysis.classification] = 0;
+        }
+        stats.classifications[analysis.classification]++;
+
+        // Check for duplicates
+        if (analysis.hash && imageHashes.has(analysis.hash)) {
+          analysis.isDuplicate = true;
+          stats.duplicates++;
+          writeLog(
+            `  🔄 صورة مكررة: ${fileName} (مماثلة لـ ${imageHashes.get(analysis.hash)})`,
+          );
+        } else if (analysis.hash) {
+          imageHashes.set(analysis.hash, fileName);
+        }
+
+        // Determine classification folder
+        let targetFolder = "others";
+        if (analysis.isNSFW) {
+          targetFolder = "rejected";
+        } else if (analysis.isDuplicate) {
+          targetFolder = "duplicates";
+        } else if (
+          analysis.faces.length > 0 &&
+          analysis.classification.includes("person")
+        ) {
+          targetFolder = "selfies";
+        } else if (analysis.text.length > 50) {
+          targetFolder = "documents";
+        } else if (
+          ["nature", "landscape", "outdoor"].some((term) =>
+            analysis.classification.includes(term),
+          )
+        ) {
+          targetFolder = "nature";
+        } else if (
+          ["food", "meal", "drink"].some((term) =>
+            analysis.classification.includes(term),
+          )
+        ) {
+          targetFolder = "food";
+        } else if (analysis.classification.includes("animal")) {
+          targetFolder = "animals";
+        } else if (
+          ["car", "vehicle"].some((term) =>
+            analysis.classification.includes(term),
+          )
+        ) {
+          targetFolder = "vehicles";
+        } else if (
+          ["building", "architecture"].some((term) =>
+            analysis.classification.includes(term),
+          )
+        ) {
+          targetFolder = "buildings";
+        }
+
+        // Copy to processed folder with new name
+        const processedPath = path.join(
+          APP_DIRS.images.processed,
+          analysis.suggestedName,
+        );
+        await fs.copyFile(filePath, processedPath);
+
+        // Copy to classified folder
+        const classifiedPath = path.join(
+          analysis.isNSFW
+            ? APP_DIRS.images.rejected
+            : APP_DIRS.images.classified,
+          analysis.isDuplicate ? "duplicates" : targetFolder,
+          fileName,
+        );
+        await fs.mkdir(path.dirname(classifiedPath), { recursive: true });
+        await fs.copyFile(filePath, classifiedPath);
+
+        stats.moved++;
+
+        writeLog(
+          `  ✅ تم التصنيف: ${targetFolder} | الوجوه: ${analysis.faces.length} | النص: ${analysis.text.length > 0 ? "نعم" : "لا"}`,
+        );
+
+        if (analysis.errors.length > 0) {
+          writeLog(`  ⚠️ تحذيرات: ${analysis.errors.join(", ")}`);
+        }
+      } else {
+        stats.errors++;
+        writeLog(`  ❌ فشل في معالجة: ${fileName}`);
+      }
+    }
+
+    writeLog("\n🎉 --- اكتملت عملية التنظيم بنجاح ---");
+    writeLog(`📊 الإحصائيات النهائية:`);
+    writeLog(`  • المعالج: ${stats.processed}/${stats.total}`);
+    writeLog(`  • الوجوه المكتشفة: ${stats.faces}`);
+    writeLog(`  • المحتوى الحساس: ${stats.nsfw}`);
+    writeLog(`  • الوثائق: ${stats.documents}`);
+    writeLog(`  • المتكررات: ${stats.duplicates}`);
+    writeLog(`  • تم النقل: ${stats.moved}`);
+    writeLog(`  • الأخطاء: ${stats.errors}`);
+
+    // Save log file
+    await fs.writeFile(logFilePath, logContent);
+
+    win.webContents.send("organization-complete", { success: true, stats });
+
+    return { success: true, stats, logPath: logFilePath };
+  } catch (error) {
+    writeLog(`❌ خطأ فادح: ${error.message}`);
+    await fs.writeFile(logFilePath, logContent);
+    stats.errors++;
+
+    win.webContents.send("organization-complete", {
+      success: false,
+      error: error.message,
+      stats,
+    });
+
+    return { success: false, error: error.message, stats };
+  } finally {
+    isProcessing = false;
+  }
+}
+
+// --- Electron App Setup ---
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    minWidth: 800,
+    minHeight: 600,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      nodeIntegration: false,
+      contextIsolation: true,
+      enableRemoteModule: false,
+    },
+    icon: path.join(__dirname, "assets", "icon.png"),
+    show: false,
+    titleBarStyle: "default",
+  });
+
+  // Load UI
+  win.loadFile(path.join(__dirname, "ui", "index.html"));
+
+  // Show window when ready
+  win.once("ready-to-show", async () => {
+    win.show();
+
+    // Initialize directories and load models
+    const dirsReady = await initializeDirectories();
+    if (dirsReady) {
+      await loadAIModels(win);
+    }
+  });
+
+  // Development mode
+  if (process.argv.includes("--dev")) {
+    win.webContents.openDevTools();
+  }
+
+  return win;
+}
+
+// --- IPC Handlers ---
+ipcMain.handle("get-app-info", () => {
+  return {
+    version: app.getVersion(),
+    name: app.getName(),
+    directories: APP_DIRS,
+    modelsLoaded,
+    isProcessing,
+  };
+});
+
+ipcMain.handle("select-source-folder", async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openDirectory"],
+    title: "اختر مجلد الصور المصدر",
+  });
+
+  if (!result.canceled && result.filePaths.length > 0) {
+    APP_DIRS.images.raw = result.filePaths[0];
+    return { success: true, path: result.filePaths[0] };
+  }
+
+  return { success: false };
+});
+
+ipcMain.handle("run-organization", async (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  return await organizeImages(win);
+});
+
+ipcMain.handle("open-folder", async (event, folderType) => {
+  const folderPath = APP_DIRS.images[folderType] || APP_DIRS.images.classified;
+  shell.openPath(folderPath);
+});
+
+ipcMain.handle("get-statistics", async () => {
+  // Implementation to get current statistics
+  return {
+    totalImages: 0,
+    processed: 0,
+    classifications: {},
+  };
+});
+
+// --- App Event Handlers ---
 app.whenReady().then(() => {
-  smartOrganizer.createWindow();
+  createWindow();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      smartOrganizer.createWindow();
+      createWindow();
     }
   });
 });
 
 app.on("window-all-closed", () => {
-  if (smartOrganizer.watcher) {
-    smartOrganizer.watcher.close();
-  }
-
   if (process.platform !== "darwin") {
+    // Cleanup resources
+    if (ocrWorker) {
+      ocrWorker.terminate();
+    }
     app.quit();
   }
 });
 
-// IPC handlers
-ipcMain.handle("organize-images", async () => {
-  return await smartOrganizer.organizeImages();
+app.on("before-quit", () => {
+  isProcessing = false;
 });
 
-ipcMain.handle("get-stats", async () => {
-  return await smartOrganizer.getStats();
-});
-
-ipcMain.handle("open-folder", async (event, folderType) => {
-  const folderPaths = {
-    raw: path.join(smartOrganizer.basePath, "images/raw"),
-    classified: path.join(smartOrganizer.basePath, "images/classified"),
-    renamed: path.join(smartOrganizer.basePath, "images/renamed"),
-    logs: path.join(smartOrganizer.basePath, "logs"),
-  };
-
-  const folderPath = folderPaths[folderType];
-  if (folderPath) {
-    require("electron").shell.openPath(folderPath);
-  }
-});
-
-ipcMain.handle("select-raw-folder", async () => {
-  const result = await dialog.showOpenDialog(smartOrganizer.mainWindow, {
-    properties: ["openDirectory"],
-    title: "Select Raw Images Folder",
-  });
-
-  if (!result.canceled) {
-    const selectedPath = result.filePaths[0];
-    // Copy images from selected folder to raw folder
-    const rawPath = path.join(smartOrganizer.basePath, "images/raw");
-    const images = await smartOrganizer.getImageFiles(selectedPath);
-
-    for (const imagePath of images) {
-      const fileName = path.basename(imagePath);
-      const destPath = path.join(rawPath, fileName);
-      await fs.copy(imagePath, destPath, { overwrite: true });
-    }
-
-    return { imported: images.length, path: selectedPath };
-  }
-
-  return { imported: 0 };
-});
-
-logger.info("Knoux SmartOrganizer PRO starting...");
+console.log("🚀 Knoux SmartOrganizer PRO Desktop started");
