@@ -831,15 +831,38 @@ export default function WorkingApp() {
 
                 <div className="space-y-2">
                   {!isProcessing ? (
-                    <Button
-                      onClick={() => startProcessing()}
-                      disabled={images.length === 0}
-                      className="w-full"
-                    >
-                      <Play className="w-4 h-4 mr-2" />
-                      بدء المعالجة (
-                      {images.filter((img) => !img.processed).length})
-                    </Button>
+                    <>
+                      <Button
+                        onClick={() => startProcessing()}
+                        disabled={images.length === 0}
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                      >
+                        <Brain className="w-4 h-4 mr-2" />
+                        تحليل ذكي (
+                        {images.filter((img) => !img.processed).length})
+                      </Button>
+
+                      <Button
+                        onClick={autoOrganizeImages}
+                        disabled={
+                          images.filter((img) => img.processed).length === 0
+                        }
+                        className="w-full bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700"
+                      >
+                        <FolderOpen className="w-4 h-4 mr-2" />
+                        تنظيم تلقائي
+                      </Button>
+
+                      <Button
+                        onClick={detectDuplicates}
+                        disabled={images.length < 2}
+                        variant="outline"
+                        className="w-full border-orange-300 hover:bg-orange-50"
+                      >
+                        <Target className="w-4 h-4 mr-2" />
+                        كشف المتكررات
+                      </Button>
+                    </>
                   ) : (
                     <Button
                       onClick={stopProcessing}
@@ -898,8 +921,25 @@ export default function WorkingApp() {
                     <SelectContent>
                       <SelectItem value="grid">شبكة</SelectItem>
                       <SelectItem value="list">قائمة</SelectItem>
+                      <SelectItem value="folders">مجلدات ذكية</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={autoOrganizeEnabled}
+                    onCheckedChange={setAutoOrganizeEnabled}
+                  />
+                  <Label>تنظيم تلقائي</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={showDuplicatesPanel}
+                    onCheckedChange={setShowDuplicatesPanel}
+                  />
+                  <Label>عرض المتكررات</Label>
                 </div>
 
                 <div>
