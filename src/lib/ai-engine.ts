@@ -20,7 +20,7 @@ export interface AiSettings {
   runColorPalette: boolean;
 }
 
-// --- واجهة البيانات التفصيلية لكل صو��ة ---
+// --- واجهة البيانات التفصيلية لكل صورة ---
 export interface ImageAnalysis {
   id: string;
   file: File;
@@ -91,53 +91,80 @@ class AIEngine {
 
       // 1. نموذج التصنيف العام الدقيق - CLIP ViT
       if (settings.runClassifier) {
-        progressCallback(
-          "📸 تحميل نموذج التصنيف المتقدم (CLIP)...",
-          (loadedModels / totalModels) * 90,
-        );
-        this.models.classifier = await pipeline(
-          "zero-shot-image-classification",
-          "Xenova/clip-vit-base-patch32",
-        );
+        try {
+          progressCallback(
+            "📸 تحميل نموذج التصنيف المتقدم (CLIP)...",
+            (loadedModels / totalModels) * 90,
+          );
+          this.models.classifier = await pipeline(
+            "zero-shot-image-classification",
+            "Xenova/clip-vit-base-patch32",
+          );
+          progressCallback(
+            "✅ تم تحميل نموذج التصنيف",
+            (loadedModels / totalModels) * 90,
+          );
+        } catch (error) {
+          console.warn("فشل تحميل نموذج ال��صنيف:", error);
+          this.models.classifierFailed = true;
+          progressCallback(
+            "⚠️ فشل تحميل نموذج التصنيف - سيتم استخدام بديل",
+            (loadedModels / totalModels) * 90,
+          );
+        }
         loadedModels++;
-        progressCallback(
-          "✅ تم تحميل نموذج التصنيف",
-          (loadedModels / totalModels) * 90,
-        );
       }
 
       // 2. الوصف الذكي والسياقي - ViT-GPT2
       if (settings.runCaptioner) {
-        progressCallback(
-          "📝 تحميل نموذج الوصف الذكي (ViT-GPT2)...",
-          (loadedModels / totalModels) * 90,
-        );
-        this.models.captioner = await pipeline(
-          "image-to-text",
-          "Xenova/vit-gpt2-image-captioning",
-        );
+        try {
+          progressCallback(
+            "📝 تحميل نموذج الوصف الذكي (ViT-GPT2)...",
+            (loadedModels / totalModels) * 90,
+          );
+          this.models.captioner = await pipeline(
+            "image-to-text",
+            "Xenova/vit-gpt2-image-captioning",
+          );
+          progressCallback(
+            "✅ تم تحميل نموذج الوصف",
+            (loadedModels / totalModels) * 90,
+          );
+        } catch (error) {
+          console.warn("فشل تحميل نموذج الوصف:", error);
+          this.models.captionerFailed = true;
+          progressCallback(
+            "⚠️ فشل تحميل نموذج الوصف - سيتم استخدام بديل",
+            (loadedModels / totalModels) * 90,
+          );
+        }
         loadedModels++;
-        progressCallback(
-          "✅ تم تحميل نموذج الوصف",
-          (loadedModels / totalModels) * 90,
-        );
       }
 
       // 3. كشف الأجسام وتحديدها - YOLOS
       if (settings.runObjectDetection) {
-        progressCallback(
-          "🎯 تحميل نموذج كشف الأجسام (YOLOS)...",
-          (loadedModels / totalModels) * 90,
-        );
-        this.models.objectDetector = await pipeline(
-          "object-detection",
-          "Xenova/yolos-tiny",
-        );
+        try {
+          progressCallback(
+            "🎯 تحميل نموذج كشف الأجسام (YOLOS)...",
+            (loadedModels / totalModels) * 90,
+          );
+          this.models.objectDetector = await pipeline(
+            "object-detection",
+            "Xenova/yolos-tiny",
+          );
+          progressCallback(
+            "✅ تم تحميل نموذج كشف الأجسام",
+            (loadedModels / totalModels) * 90,
+          );
+        } catch (error) {
+          console.warn("فشل تحميل نموذج كشف الأجسام:", error);
+          this.models.objectDetectorFailed = true;
+          progressCallback(
+            "⚠️ فشل تحميل نموذج كشف الأجسام - سيتم استخدام بديل",
+            (loadedModels / totalModels) * 90,
+          );
+        }
         loadedModels++;
-        progressCallback(
-          "✅ تم تحميل نموذج كشف الأجسام",
-          (loadedModels / totalModels) * 90,
-        );
       }
 
       // 4. كشف المحتوى الحساس - NSFWJS
@@ -218,7 +245,7 @@ class AIEngine {
       }
 
       this.isReady = true;
-      progressCallback("🎉 جميع النماذج المطلوبة جاهزة للاستخدام!", 100);
+      progressCallback("🎉 جميع النماذج المطلوبة جاهز�� للاستخدام!", 100);
     } catch (error) {
       console.error("خطأ في تهيئة النماذج:", error);
       progressCallback(`❌ خطأ في تحميل النماذج: ${error}`, 0);
