@@ -6,7 +6,7 @@ import * as faceapi from "@vladmandic/face-api";
 import { createWorker } from "tesseract.js";
 import { phash } from "image-hash";
 
-// --- واجهة التحكم التي يضبطها المستخد�� ---
+// --- واجهة التحكم التي يضبطها المستخدم ---
 export interface AiSettings {
   runClassifier: boolean;
   runCaptioner: boolean;
@@ -241,16 +241,25 @@ class AIEngine {
 
       // 6. استخراج النصوص - Tesseract.js
       if (settings.runOcr) {
-        progressCallback(
-          "📖 تهيئة قارئ النصوص (Tesseract)...",
-          (loadedModels / totalModels) * 90,
-        );
-        this.models.ocr = await createWorker("eng+ara");
+        try {
+          progressCallback(
+            "📖 تهيئة قارئ النصوص (Tesseract)...",
+            (loadedModels / totalModels) * 90,
+          );
+          this.models.ocr = await createWorker("eng+ara");
+          progressCallback(
+            "✅ تم تهيئة قارئ النصوص",
+            (loadedModels / totalModels) * 90,
+          );
+        } catch (error) {
+          console.warn("فشل تهيئة Tesseract:", error);
+          this.models.ocrFailed = true;
+          progressCallback(
+            "⚠️ فشل تهيئة OCR - سيتم استخدام بديل",
+            (loadedModels / totalModels) * 90,
+          );
+        }
         loadedModels++;
-        progressCallback(
-          "✅ تم تهيئة قارئ النصوص",
-          (loadedModels / totalModels) * 90,
-        );
       }
 
       this.isReady = true;
