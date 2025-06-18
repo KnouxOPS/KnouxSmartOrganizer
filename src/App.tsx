@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
+import OrganizerPage from "@/pages/OrganizerPage";
 import PowerfulWorkingApp from "@/pages/PowerfulWorkingApp";
 import WorkingApp from "@/pages/WorkingApp";
 import NotFound from "@/pages/NotFound";
@@ -11,8 +12,11 @@ function App() {
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Routes>
-          {/* التطبيق القوي الجديد كصفحة رئيسية */}
-          <Route path="/" element={<PowerfulWorkingApp />} />
+          {/* محرك الذكاء الاصطناعي المتقدم مع 10 قدرات */}
+          <Route path="/" element={<OrganizerPage />} />
+
+          {/* التطبيق القوي السابق */}
+          <Route path="/powerful" element={<PowerfulWorkingApp />} />
 
           {/* التطبيق القديم للمقارنة */}
           <Route path="/old" element={<WorkingApp />} />
