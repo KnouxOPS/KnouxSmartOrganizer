@@ -104,12 +104,13 @@ export default function PowerfulWorkingApp() {
 
   // حالات المحرك القوي الجديد
   const [aiSettings, setAiSettings] =
-    useState<AIEngineSettings>(defaultSettings);
+    useState<AIEngineSettings>(powerfulSettings);
   const [aiInitialized, setAiInitialized] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiProgress, setAiProgress] = useState(0);
   const [aiStatus, setAiStatus] = useState("");
   const [showSettings, setShowSettings] = useState(false);
+  const [usingSimpleAI, setUsingSimpleAI] = useState(false);
 
   // مراجع العناصر
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -241,7 +242,7 @@ export default function PowerfulWorkingApp() {
       },
       {
         id: "completion",
-        name: "✅ الانتهاء",
+        name: "✅ ال��نتهاء",
         description: "تم الانتهاء من المعالجة الشاملة",
         status: "pending",
         progress: 0,
@@ -589,7 +590,7 @@ export default function PowerfulWorkingApp() {
       if (showProcessedOnly && img.classification === "جاري المعالجة...")
         return false;
 
-      // فلترة الثقة
+      // ��لترة الثقة
       const confidence = img.confidence * 100;
       if (confidence < minConfidence[0]) return false;
 
