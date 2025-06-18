@@ -16,7 +16,11 @@ const chokidar = require("chokidar");
 const ExifParser = require("exif-parser");
 
 // --- Import New AI Models Engine ---
-const { initializeModels, models, areModelsReady } = require("./core/models.js");
+const {
+  initializeModels,
+  models,
+  areModelsReady,
+} = require("./core/models.js");
 
 // --- Application State ---
 let isProcessing = false;
@@ -96,7 +100,7 @@ async function loadAIModels(win) {
     win.webContents.send("models-loaded", true);
     return true;
   } catch (error) {
-    console.error("❌ ��شل تحميل النماذج:", error);
+    console.error("❌ فشل تحميل النماذج:", error);
     win.webContents.send("update-progress", `خطأ فادح: ${error.message}`);
     win.webContents.send("models-loaded", false);
     return false;
@@ -201,7 +205,11 @@ async function analyzeImage(filePath, fileName, win, settings = {}) {
         tensor.dispose();
 
         results.faces = detections
-          .filter(detection => detection.detection.score > (settings.faceConfidenceThreshold || 0.5))
+          .filter(
+            (detection) =>
+              detection.detection.score >
+              (settings.faceConfidenceThreshold || 0.5),
+          )
           .map((detection) => ({
             confidence: detection.detection.score,
             age: Math.round(detection.age),
@@ -227,44 +235,48 @@ async function analyzeImage(filePath, fileName, win, settings = {}) {
     // 5. Image Classification - تشغيل شرطي
     if (settings.runClassifier !== false) {
       try {
-      const candidateLabels = [
-        "person",
-        "selfie",
-        "portrait",
-        "people",
-        "nature",
-        "landscape",
-        "outdoor",
-        "tree",
-        "sky",
-        "food",
-        "meal",
-        "drink",
-        "restaurant",
-        "document",
-        "text",
-        "paper",
-        "screenshot",
-        "animal",
-        "pet",
-        "dog",
-        "cat",
-        "car",
-        "vehicle",
-        "transportation",
-        "building",
-        "architecture",
-        "house",
-        "sport",
-        "game",
-        "activity",
-      ];
+        const candidateLabels = [
+          "person",
+          "selfie",
+          "portrait",
+          "people",
+          "nature",
+          "landscape",
+          "outdoor",
+          "tree",
+          "sky",
+          "food",
+          "meal",
+          "drink",
+          "restaurant",
+          "document",
+          "text",
+          "paper",
+          "screenshot",
+          "animal",
+          "pet",
+          "dog",
+          "cat",
+          "car",
+          "vehicle",
+          "transportation",
+          "building",
+          "architecture",
+          "house",
+          "sport",
+          "game",
+          "activity",
+        ];
 
-      const classificationResult = await models.classifier(rawImage, candidateLabels);
-      results.classification = classificationResult[0].label;
-      results.confidence = classificationResult[0].score;
-    } catch (e) {
-      results.errors.push(`Classification failed: ${e.message}`);
+        const classificationResult = await models.classifier(
+          rawImage,
+          candidateLabels,
+        );
+        results.classification = classificationResult[0].label;
+        results.confidence = classificationResult[0].score;
+      } catch (e) {
+        results.errors.push(`Classification failed: ${e.message}`);
+      }
     }
 
     // 6. Generate Description - تشغيل شرطي
@@ -303,7 +315,10 @@ async function analyzeImage(filePath, fileName, win, settings = {}) {
       .replace("{desc}", safeDescription || "general")
       .replace("{class}", results.classification || "image")
       .replace("{faces}", results.faces.length.toString())
-      .replace("{confidence}", Math.round((results.confidence || 0) * 100).toString());
+      .replace(
+        "{confidence}",
+        Math.round((results.confidence || 0) * 100).toString(),
+      );
 
     results.suggestedName = `${finalName}${extension}`;
     results.processed = true;
@@ -322,9 +337,12 @@ async function organizeImages(win) {
     return { success: false, message: "عملية أخرى قيد التنفيذ" };
   }
 
-  // التحقق من جاهزية الن��اذج أولاً
+  // التحقق من جاهزية النماذج أولاً
   if (!areModelsReady()) {
-    win.webContents.send("update-progress", "❌ النماذج غير جاهزة بعد. الرجاء الانتظار حتى يكتمل التحميل.");
+    win.webContents.send(
+      "update-progress",
+      "❌ النماذج غير جاهزة بعد. الرجاء الانتظار حتى يكتمل التحميل.",
+    );
     return { success: false, message: "النماذج غير جاهزة بعد" };
   }
 
@@ -525,9 +543,13 @@ async function organizeImages(win) {
     await fs.writeFile(logFilePath, logContent);
 
     // حفظ إحصائيات المعالجة
-    const processingTime = Date.now() - Date.parse(logTimestamp.replace(/-/g, ':'));
+    const processingTime =
+      Date.now() - Date.parse(logTimestamp.replace(/-/g, ":"));
     store.set("lastProcessed", new Date().toISOString());
-    store.set("totalProcessingTime", store.get("totalProcessingTime", 0) + processingTime);
+    store.set(
+      "totalProcessingTime",
+      store.get("totalProcessingTime", 0) + processingTime,
+    );
 
     win.webContents.send("organization-complete", { success: true, stats });
 
