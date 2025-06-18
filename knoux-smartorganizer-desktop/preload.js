@@ -5,13 +5,18 @@ contextBridge.exposeInMainWorld("electronAPI", {
   // App Information
   getAppInfo: () => ipcRenderer.invoke("get-app-info"),
 
+  // Settings Management
+  getSettings: () => ipcRenderer.invoke("get-settings"),
+  setSettings: (settings) => ipcRenderer.invoke("set-settings", settings),
+
   // Folder Operations
   selectSourceFolder: () => ipcRenderer.invoke("select-source-folder"),
-  openFolder: (folderType) => ipcRenderer.invoke("open-folder", folderType),
+  openFolder: (folderPath) => ipcRenderer.invoke("open-folder", folderPath),
 
   // AI Processing
   runOrganization: () => ipcRenderer.invoke("run-organization"),
   getStatistics: () => ipcRenderer.invoke("get-statistics"),
+  getAdvancedStats: () => ipcRenderer.invoke("get-advanced-stats"),
 
   // Event Listeners
   onUpdateProgress: (callback) => {
