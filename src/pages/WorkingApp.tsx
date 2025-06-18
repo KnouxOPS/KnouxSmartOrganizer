@@ -1232,6 +1232,13 @@ export default function WorkingApp() {
                       >
                         <List className="w-4 h-4" />
                       </Button>
+                      <Button
+                        variant={viewMode === "folders" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setViewMode("folders")}
+                      >
+                        <FolderOpen className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
 
