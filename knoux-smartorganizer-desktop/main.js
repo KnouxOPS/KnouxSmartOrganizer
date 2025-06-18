@@ -9,18 +9,16 @@ const store = new Store();
 
 // --- AI Processing Libraries ---
 const sharp = require("sharp");
-const { pipeline, RawImage } = require("@xenova/transformers");
-const { createWorker } = require("tesseract.js");
-const nsfw = require("nsfwjs");
-const faceapi = require("@vladmandic/face-api");
+const { RawImage } = require("@xenova/transformers");
 const { phash } = require("image-hash");
 const glob = require("glob");
 const chokidar = require("chokidar");
 const ExifParser = require("exif-parser");
 
-// --- Global AI Models ---
-let classifier, imageToTextGenerator, nsfwModel, ocrWorker;
-let modelsLoaded = false;
+// --- Import New AI Models Engine ---
+const { initializeModels, models, areModelsReady } = require("./core/models.js");
+
+// --- Application State ---
 let isProcessing = false;
 
 // --- Application Directories ---
@@ -76,7 +74,7 @@ async function initializeDirectories() {
     await fs.mkdir(APP_DIRS.logs, { recursive: true });
     await fs.mkdir(APP_DIRS.temp, { recursive: true });
 
-    console.log("✅ تم تهيئة جميع المجلدات بنجاح");
+    console.log("✅ تم تهيئ�� جميع المجلدات بنجاح");
     return true;
   } catch (error) {
     console.error("❌ خطأ في تهيئة المجلدات:", error);
