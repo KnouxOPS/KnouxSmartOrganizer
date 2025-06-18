@@ -618,9 +618,9 @@ export default function WorkingApp() {
 
       {/* الإشعارات */}
       <AnimatePresence>
-        {notifications.map((notification) => (
+        {notifications.map((notification, index) => (
           <motion.div
-            key={notification.id}
+            key={`notification-${notification.id}-${index}`}
             initial={{ opacity: 0, y: -100, x: "100%" }}
             animate={{ opacity: 1, y: 0, x: 0 }}
             exit={{ opacity: 0, x: "100%" }}
@@ -1089,7 +1089,7 @@ export default function WorkingApp() {
                       <Progress value={overallProgress} className="h-3 mb-2" />
                       <p className="text-sm text-gray-600">
                         {processingSteps[currentStep]?.description ||
-                          "جاري المعالجة..."}
+                          "جاري المعالج��..."}
                       </p>
                     </div>
 
@@ -1313,28 +1313,30 @@ export default function WorkingApp() {
                           </Badge>
                         </div>
                         <div className="grid grid-cols-6 gap-2">
-                          {group.images.slice(0, 6).map((imageId: string) => {
-                            const image = images.find(
-                              (img) => img.id === imageId,
-                            );
-                            return image ? (
-                              <div
-                                key={imageId}
-                                className="relative aspect-square"
-                              >
-                                <img
-                                  src={image.url}
-                                  alt={image.name}
-                                  className="w-full h-full object-cover rounded border"
-                                />
-                                {imageId === group.representative && (
-                                  <div className="absolute top-1 right-1 bg-green-500 rounded-full p-1">
-                                    <CheckCircle className="w-3 h-3 text-white" />
-                                  </div>
-                                )}
-                              </div>
-                            ) : null;
-                          })}
+                          {group.images
+                            .slice(0, 6)
+                            .map((imageId: string, imgIndex: number) => {
+                              const image = images.find(
+                                (img) => img.id === imageId,
+                              );
+                              return image ? (
+                                <div
+                                  key={`duplicate-${group.id}-${imageId}-${imgIndex}`}
+                                  className="relative aspect-square"
+                                >
+                                  <img
+                                    src={image.url}
+                                    alt={image.name}
+                                    className="w-full h-full object-cover rounded border"
+                                  />
+                                  {imageId === group.representative && (
+                                    <div className="absolute top-1 right-1 bg-green-500 rounded-full p-1">
+                                      <CheckCircle className="w-3 h-3 text-white" />
+                                    </div>
+                                  )}
+                                </div>
+                              ) : null;
+                            })}
                           {group.images.length > 6 && (
                             <div className="aspect-square bg-gray-100 rounded border flex items-center justify-center">
                               <span className="text-xs text-gray-500">
@@ -1430,27 +1432,32 @@ export default function WorkingApp() {
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                        {virtualFolders[selectedFolder].map((imageId) => {
-                          const image = images.find(
-                            (img) => img.id === imageId,
-                          );
-                          return image ? (
-                            <Card key={imageId} className="overflow-hidden">
-                              <div className="relative aspect-square">
-                                <img
-                                  src={image.url}
-                                  alt={image.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <div className="p-2">
-                                <p className="text-xs font-medium truncate">
-                                  {image.name}
-                                </p>
-                              </div>
-                            </Card>
-                          ) : null;
-                        })}
+                        {virtualFolders[selectedFolder].map(
+                          (imageId, index) => {
+                            const image = images.find(
+                              (img) => img.id === imageId,
+                            );
+                            return image ? (
+                              <Card
+                                key={`folder-${selectedFolder}-${imageId}-${index}`}
+                                className="overflow-hidden"
+                              >
+                                <div className="relative aspect-square">
+                                  <img
+                                    src={image.url}
+                                    alt={image.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="p-2">
+                                  <p className="text-xs font-medium truncate">
+                                    {image.name}
+                                  </p>
+                                </div>
+                              </Card>
+                            ) : null;
+                          },
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -1561,7 +1568,7 @@ export default function WorkingApp() {
                   <AnimatePresence>
                     {filteredAndSortedImages.map((image, index) => (
                       <motion.div
-                        key={image.id}
+                        key={`gallery-${image.id}-${index}`}
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: -20 }}
