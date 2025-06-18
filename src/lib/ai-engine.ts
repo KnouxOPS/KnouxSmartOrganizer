@@ -619,7 +619,7 @@ class AIEngine {
     const { width, height, data } = imageData;
     let sharpness = 0;
 
-    // Sobel operator للكشف عن الح��اف
+    // Sobel operator للكشف عن الحواف
     for (let y = 1; y < height - 1; y++) {
       for (let x = 1; x < width - 1; x++) {
         const i = (y * width + x) * 4;
@@ -748,7 +748,7 @@ class AIEngine {
         clusters[closestCentroid].push(pixel);
       }
 
-      // تحدي�� المراكز
+      // تحديث المراكز
       for (let j = 0; j < centroids.length; j++) {
         if (clusters[j].length > 0) {
           const avgR =
