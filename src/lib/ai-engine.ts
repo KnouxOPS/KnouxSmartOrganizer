@@ -6,7 +6,7 @@ import * as faceapi from "@vladmandic/face-api";
 import { createWorker } from "tesseract.js";
 import { phash } from "image-hash";
 
-// --- واجهة التحكم التي يضبطها المستخدم ---
+// --- واجهة التحكم التي يضبطها المستخد�� ---
 export interface AiSettings {
   runClassifier: boolean;
   runCaptioner: boolean;
@@ -105,7 +105,7 @@ class AIEngine {
             (loadedModels / totalModels) * 90,
           );
         } catch (error) {
-          console.warn("فشل تحميل نموذج ال��صنيف:", error);
+          console.warn("فشل تحميل نموذج التصنيف:", error);
           this.models.classifierFailed = true;
           progressCallback(
             "⚠️ فشل تحميل نموذج التصنيف - سيتم استخدام بديل",
@@ -169,16 +169,25 @@ class AIEngine {
 
       // 4. كشف المحتوى الحساس - NSFWJS
       if (settings.runNsfw) {
-        progressCallback(
-          "🔍 تحميل نموذج المحتوى الحساس (NSFWJS)...",
-          (loadedModels / totalModels) * 90,
-        );
-        this.models.nsfw = await nsfwjs.load();
+        try {
+          progressCallback(
+            "🔍 تحميل نموذج المحتوى الحساس (NSFWJS)...",
+            (loadedModels / totalModels) * 90,
+          );
+          this.models.nsfw = await nsfwjs.load();
+          progressCallback(
+            "✅ تم تحميل نموذج المحتوى الحساس",
+            (loadedModels / totalModels) * 90,
+          );
+        } catch (error) {
+          console.warn("فشل تحميل نموذج NSFW:", error);
+          this.models.nsfwFailed = true;
+          progressCallback(
+            "⚠️ فشل تحميل نموذج NSFW - سيتم استخدام بديل",
+            (loadedModels / totalModels) * 90,
+          );
+        }
         loadedModels++;
-        progressCallback(
-          "✅ تم تحميل نموذج المحتوى الحساس",
-          (loadedModels / totalModels) * 90,
-        );
       }
 
       // 5. كشف وتحليل الوجوه - Face-API
@@ -245,7 +254,7 @@ class AIEngine {
       }
 
       this.isReady = true;
-      progressCallback("🎉 جميع النماذج المطلوبة جاهز�� للاستخدام!", 100);
+      progressCallback("🎉 جميع النماذج المطلوبة جاهزة للاستخدام!", 100);
     } catch (error) {
       console.error("خطأ في تهيئة النماذج:", error);
       progressCallback(`❌ خطأ في تحميل النماذج: ${error}`, 0);
