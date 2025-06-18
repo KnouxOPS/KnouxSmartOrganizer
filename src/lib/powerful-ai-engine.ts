@@ -1,5 +1,5 @@
 /**
- * Knoux SmartOrganizer PRO - محرك الذكاء الاصطناعي القوي
+ * Knoux SmartOrganizer PRO - محرك الذكاء الا��طناعي القوي
  * يحتوي على جميع النماذج الحقيقية والقوية للتطبيق الرئيسي
  */
 
@@ -218,16 +218,27 @@ class PowerfulAIEngine {
    */
   private async loadImageClassifier(): Promise<void> {
     try {
-      // استخدام MobileNet من TensorFlow.js
-      const tf = await import("@tensorflow/tfjs");
-      const mobilenet = await import("@tensorflow-models/mobilenet");
+      // التحقق من توفر TensorFlow أولاً
+      if (typeof window !== "undefined") {
+        // استخدام MobileNet من TensorFlow.js في المتصفح
+        const tf = await import("@tensorflow/tfjs").catch(() => null);
+        const mobilenet = await import("@tensorflow-models/mobilenet").catch(
+          () => null,
+        );
 
-      this.models.classifier = await mobilenet.load({
-        version: 2,
-        alpha: 1.0,
-      });
-    } catch (error) {
+        if (tf && mobilenet) {
+          this.models.classifier = await mobilenet.load({
+            version: 2,
+            alpha: 1.0,
+          });
+          return;
+        }
+      }
+
       // Fallback إلى نموذج مخصص
+      throw new Error("TensorFlow not available");
+    } catch (error) {
+      console.warn("Using fallback classifier:", error);
       this.models.classifier = new SimpleImageClassifier();
     }
   }
