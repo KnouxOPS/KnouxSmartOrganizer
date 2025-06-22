@@ -49,6 +49,8 @@ const iconMap: Record<string, React.ComponentType<any>> = {
   Zap,
   Brain,
   Rocket,
+  Crown,
+  Stethoscope,
   MessageCircle,
   Sparkles,
 };
