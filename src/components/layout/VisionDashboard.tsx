@@ -31,6 +31,8 @@ import {
   BarChart3,
   Activity,
   TrendingUp,
+  Crown,
+  Stethoscope,
 } from "lucide-react";
 
 interface VisionDashboardProps {
