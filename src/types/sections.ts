@@ -500,7 +500,7 @@ export const SECTION_THEMES: Record<string, SectionTheme> = {
       realTime: true,
       cloudSync: false,
     },
-  ],
+  },
 };
 
 // Folder Master Section (4th Section)
