@@ -34,7 +34,25 @@ import {
   Cpu,
   HardDrive,
   Zap,
+  FolderTree,
+  FileText,
+  Image,
+  Rocket,
+  MessageCircle,
 } from "lucide-react";
+
+const iconMap: Record<string, React.ComponentType<any>> = {
+  Target,
+  Shield,
+  FolderTree,
+  FileText,
+  Image,
+  Zap,
+  Brain,
+  Rocket,
+  MessageCircle,
+  Sparkles,
+};
 
 export default function VisionDashboardPage() {
   const navigate = useNavigate();
@@ -113,9 +131,8 @@ export default function VisionDashboardPage() {
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {featuredSections.map((section, index) => {
-                  const Icon = React.createElement(
-                    require("lucide-react")[section.icon] || Target,
-                  );
+                  const IconComponent = iconMap[section.icon] || Target;
+                  const Icon = <IconComponent className="w-5 h-5 text-white" />;
 
                   return (
                     <motion.div
@@ -254,10 +271,9 @@ export default function VisionDashboardPage() {
                       className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg"
                       style={{ background: section.colors.gradient.primary }}
                     >
-                      {React.createElement(
-                        require("lucide-react")[section.icon] || Target,
-                        { className: "w-4 h-4 text-white" },
-                      )}
+                      {React.createElement(iconMap[section.icon] || Target, {
+                        className: "w-4 h-4 text-white",
+                      })}
                     </div>
                     {section.status === "new" && (
                       <Badge className="bg-green-500/20 text-green-300 text-xs">
