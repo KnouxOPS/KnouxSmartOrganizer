@@ -88,7 +88,7 @@ const privacyTools: PrivacyTool[] = [
   {
     id: "activity-log-cleaner",
     name: "Activity Log & History Cleaner",
-    nameAr: "منظف سجلات النشاط والتاريخ",
+    nameAr: "منظف سجلات ��لنشاط والتاريخ",
     description:
       "Clear recent files lists, search history, Windows Explorer logs, and application activity traces",
     riskLevel: "critical",
@@ -577,104 +577,370 @@ export default function PrivacyGuard() {
             </CardContent>
           </Card>
 
-          {/* Privacy Tools Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {privacyTools.map((tool, index) => {
-              const Icon = tool.icon;
-              const RiskIcon = getRiskIcon(tool.riskLevel);
-              const isSelected = selectedTool === tool.id;
+          {/* Main Content */}
+          <AnimatePresence mode="wait">
+            {activeTab === "tools" && (
+              <motion.div
+                key="tools"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              >
+                {privacyTools.map((tool, index) => {
+                  const Icon = tool.icon;
+                  const RiskIcon = getRiskIcon(tool.riskLevel);
+                  const isSelected = selectedTools.has(tool.id);
 
-              return (
-                <motion.div
-                  key={tool.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Card
-                    className={cn(
-                      "cursor-pointer transition-all duration-300 backdrop-blur-sm",
-                      isSelected
-                        ? "bg-red-500/20 border-red-500/50 shadow-lg shadow-red-500/10"
-                        : "bg-gray-800/50 border-gray-700 hover:border-red-500/30",
-                      !tool.enabled && "opacity-60",
-                    )}
-                    onClick={() => setSelectedTool(isSelected ? null : tool.id)}
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className={cn(
-                              "w-12 h-12 rounded-xl flex items-center justify-center",
-                              tool.enabled
-                                ? "bg-red-500/20 text-red-400"
-                                : "bg-gray-500/20 text-gray-400",
-                            )}
-                          >
-                            <Icon className="w-6 h-6" />
+                  return (
+                    <motion.div
+                      key={tool.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
+                      <Card
+                        className={cn(
+                          "cursor-pointer transition-all duration-300 backdrop-blur-sm h-full",
+                          isSelected
+                            ? "bg-red-500/20 border-red-500/50 shadow-lg shadow-red-500/10"
+                            : "bg-gray-800/50 border-gray-700 hover:border-red-500/30",
+                          !tool.enabled && "opacity-60",
+                        )}
+                        onClick={() =>
+                          tool.enabled && handleToolToggle(tool.id)
+                        }
+                      >
+                        <CardContent className="p-6 flex flex-col h-full">
+                          <div className="flex items-start justify-between mb-4">
+                            <div className="flex items-center space-x-3">
+                              <div
+                                className={cn(
+                                  "w-12 h-12 rounded-xl flex items-center justify-center",
+                                  tool.category === "detection" &&
+                                    "bg-blue-500/20",
+                                  tool.category === "cleaning" &&
+                                    "bg-red-500/20",
+                                  tool.category === "protection" &&
+                                    "bg-green-500/20",
+                                  tool.category === "monitoring" &&
+                                    "bg-purple-500/20",
+                                )}
+                              >
+                                <Icon
+                                  className={cn(
+                                    "w-6 h-6",
+                                    tool.category === "detection" &&
+                                      "text-blue-400",
+                                    tool.category === "cleaning" &&
+                                      "text-red-400",
+                                    tool.category === "protection" &&
+                                      "text-green-400",
+                                    tool.category === "monitoring" &&
+                                      "text-purple-400",
+                                  )}
+                                />
+                              </div>
+                              <RiskIcon
+                                className={cn(
+                                  "w-5 h-5",
+                                  tool.riskLevel === "critical" &&
+                                    "text-red-400",
+                                  tool.riskLevel === "high" &&
+                                    "text-orange-400",
+                                  tool.riskLevel === "medium" &&
+                                    "text-yellow-400",
+                                  tool.riskLevel === "low" && "text-green-400",
+                                )}
+                              />
+                            </div>
+                            <div className="flex flex-col items-end space-y-1">
+                              <Badge
+                                className={cn(
+                                  "text-xs",
+                                  tool.category === "detection" &&
+                                    "bg-blue-500/20 text-blue-300 border-blue-500/30",
+                                  tool.category === "cleaning" &&
+                                    "bg-red-500/20 text-red-300 border-red-500/30",
+                                  tool.category === "protection" &&
+                                    "bg-green-500/20 text-green-300 border-green-500/30",
+                                  tool.category === "monitoring" &&
+                                    "bg-purple-500/20 text-purple-300 border-purple-500/30",
+                                )}
+                              >
+                                {tool.category}
+                              </Badge>
+                              {isSelected && (
+                                <CheckCircle className="w-5 h-5 text-green-400" />
+                              )}
+                            </div>
                           </div>
-                          <RiskIcon
-                            className={cn(
-                              "w-5 h-5",
-                              tool.riskLevel === "critical" && "text-red-400",
-                              tool.riskLevel === "high" && "text-orange-400",
-                              tool.riskLevel === "medium" && "text-yellow-400",
-                              tool.riskLevel === "low" && "text-green-400",
+
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-white mb-1">
+                              {tool.name}
+                            </h3>
+                            <p className="text-sm text-red-300 mb-2">
+                              {tool.nameAr}
+                            </p>
+                            <p className="text-sm text-gray-400 leading-relaxed mb-3">
+                              {tool.description}
+                            </p>
+                          </div>
+
+                          <div className="space-y-3 mt-auto">
+                            {(tool.issuesFound !== undefined ||
+                              tool.filesProcessed) && (
+                              <div className="grid grid-cols-2 gap-2">
+                                {tool.issuesFound !== undefined && (
+                                  <div className="text-center p-2 bg-gray-700/30 rounded">
+                                    <div className="text-sm font-bold text-red-400">
+                                      {tool.issuesFound}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      Issues
+                                    </div>
+                                  </div>
+                                )}
+                                {tool.filesProcessed && (
+                                  <div className="text-center p-2 bg-gray-700/30 rounded">
+                                    <div className="text-sm font-bold text-blue-400">
+                                      {tool.filesProcessed}
+                                    </div>
+                                    <div className="text-xs text-gray-500">
+                                      Files
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             )}
-                          />
-                        </div>
-                        <div className="flex flex-col items-end space-y-1">
-                          <Badge className={getRiskColor(tool.riskLevel)}>
-                            {tool.riskLevel}
-                          </Badge>
-                          <Switch
-                            checked={tool.enabled}
-                            onCheckedChange={() => {}}
-                            className="data-[state=checked]:bg-red-500"
-                            size="sm"
-                          />
-                        </div>
+
+                            <div className="flex items-center justify-between text-xs">
+                              <div className="flex items-center space-x-1">
+                                <span className="text-gray-500">Risk:</span>
+                                <span className={getRiskColor(tool.riskLevel)}>
+                                  {tool.riskLevel}
+                                </span>
+                              </div>
+                              {tool.estimatedTime && (
+                                <span className="text-gray-400">
+                                  {tool.estimatedTime}
+                                </span>
+                              )}
+                            </div>
+
+                            {tool.lastScan && (
+                              <div className="text-xs text-gray-500">
+                                Last scan: {tool.lastScan.toLocaleTimeString()}
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            )}
+
+            {activeTab === "overview" && (
+              <motion.div
+                key="overview"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-6"
+              >
+                {/* Privacy Status Overview */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <Card className="bg-red-500/10 border-red-500/20">
+                    <CardContent className="p-6 text-center">
+                      <FileX className="w-8 h-8 text-red-400 mx-auto mb-3" />
+                      <div className="text-2xl font-bold text-white">247</div>
+                      <div className="text-sm text-gray-300">
+                        Metadata Found
                       </div>
-
-                      <h3 className="font-semibold text-white mb-1">
-                        {tool.name}
-                      </h3>
-                      <p className="text-sm text-red-300 mb-2">{tool.nameAr}</p>
-                      <p className="text-sm text-gray-400 leading-relaxed mb-3">
-                        {tool.description}
-                      </p>
-
-                      {tool.issuesFound !== undefined && (
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="text-xs text-gray-500">
-                            Issues found:
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              tool.issuesFound > 0
-                                ? "text-red-300 border-red-500/30"
-                                : "text-green-300 border-green-500/30",
-                            )}
-                          >
-                            {tool.issuesFound}
-                          </Badge>
-                        </div>
-                      )}
-
-                      {tool.lastScan && (
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <span>Last scan:</span>
-                          <span>{tool.lastScan.toLocaleTimeString()}</span>
-                        </div>
-                      )}
+                      <div className="text-xs text-gray-500">بيانات وصفية</div>
                     </CardContent>
                   </Card>
-                </motion.div>
-              );
-            })}
-          </div>
+
+                  <Card className="bg-orange-500/10 border-orange-500/20">
+                    <CardContent className="p-6 text-center">
+                      <Activity className="w-8 h-8 text-orange-400 mx-auto mb-3" />
+                      <div className="text-2xl font-bold text-white">89</div>
+                      <div className="text-sm text-gray-300">Activity Logs</div>
+                      <div className="text-xs text-gray-500">سجلات النشاط</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-yellow-500/10 border-yellow-500/20">
+                    <CardContent className="p-6 text-center">
+                      <Search className="w-8 h-8 text-yellow-400 mx-auto mb-3" />
+                      <div className="text-2xl font-bold text-white">156</div>
+                      <div className="text-sm text-gray-300">
+                        Tracking Files
+                      </div>
+                      <div className="text-xs text-gray-500">ملفات التتبع</div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-purple-500/10 border-purple-500/20">
+                    <CardContent className="p-6 text-center">
+                      <FileSearch className="w-8 h-8 text-purple-400 mx-auto mb-3" />
+                      <div className="text-2xl font-bold text-white">23</div>
+                      <div className="text-sm text-gray-300">
+                        Sensitive Data
+                      </div>
+                      <div className="text-xs text-gray-500">بيانات حساسة</div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Quick Actions Dashboard */}
+                <Card className="bg-gray-800/50 border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white">
+                      Immediate Actions Required
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Button className="h-16 bg-red-500/20 border-red-500/50 text-red-300 hover:bg-red-500/30 justify-start">
+                        <div className="flex items-center space-x-3">
+                          <FileX className="w-6 h-6" />
+                          <div className="text-left">
+                            <div className="font-medium">
+                              Clear Photo Metadata
+                            </div>
+                            <div className="text-xs opacity-70">
+                              247 files with GPS data
+                            </div>
+                          </div>
+                        </div>
+                      </Button>
+
+                      <Button className="h-16 bg-orange-500/20 border-orange-500/50 text-orange-300 hover:bg-orange-500/30 justify-start">
+                        <div className="flex items-center space-x-3">
+                          <FileSearch className="w-6 h-6" />
+                          <div className="text-left">
+                            <div className="font-medium">
+                              Review Sensitive Data
+                            </div>
+                            <div className="text-xs opacity-70">
+                              23 documents need attention
+                            </div>
+                          </div>
+                        </div>
+                      </Button>
+
+                      <Button className="h-16 bg-yellow-500/20 border-yellow-500/50 text-yellow-300 hover:bg-yellow-500/30 justify-start">
+                        <div className="flex items-center space-x-3">
+                          <Search className="w-6 h-6" />
+                          <div className="text-left">
+                            <div className="font-medium">
+                              Remove Tracking Files
+                            </div>
+                            <div className="text-xs opacity-70">
+                              156 hidden trackers found
+                            </div>
+                          </div>
+                        </div>
+                      </Button>
+
+                      <Button className="h-16 bg-purple-500/20 border-purple-500/50 text-purple-300 hover:bg-purple-500/30 justify-start">
+                        <div className="flex items-center space-x-3">
+                          <FolderLock className="w-6 h-6" />
+                          <div className="text-left">
+                            <div className="font-medium">
+                              Secure Permissions
+                            </div>
+                            <div className="text-xs opacity-70">
+                              45 overly permissive files
+                            </div>
+                          </div>
+                        </div>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {activeTab === "settings" && (
+              <motion.div
+                key="settings"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-6"
+              >
+                {/* Real-time Protection Settings */}
+                <Card className="bg-gray-800/50 border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-white">
+                      Protection Settings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-white">
+                          Real-time Privacy Guard
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          Monitor and block privacy threats in real-time
+                        </div>
+                      </div>
+                      <Switch
+                        checked={realTimeProtection}
+                        onCheckedChange={setRealTimeProtection}
+                        className="data-[state=checked]:bg-red-500"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-white">
+                          Automatic Cleaning
+                        </div>
+                        <div className="text-sm text-gray-400">
+                          Automatically clean detected threats
+                        </div>
+                      </div>
+                      <Switch
+                        checked={autoClean}
+                        onCheckedChange={setAutoClean}
+                        className="data-[state=checked]:bg-red-500"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="font-medium text-white">
+                        Clipboard Auto-Clear Timer
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <Slider
+                          value={clipboardTimeout}
+                          onValueChange={setClipboardTimeout}
+                          max={300}
+                          min={5}
+                          step={5}
+                          className="flex-1"
+                        />
+                        <span className="text-white font-mono w-16">
+                          {clipboardTimeout[0]}s
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-400">
+                        Clipboard will be cleared after {clipboardTimeout[0]}{" "}
+                        seconds of inactivity
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Action Panel */}
           <Card className="bg-gray-800/50 border-gray-700 backdrop-blur-sm">
