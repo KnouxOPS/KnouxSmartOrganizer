@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
+import NavigationPage from "@/pages/NavigationPage";
 import OrganizerPage from "@/pages/OrganizerPage";
 import PowerfulWorkingApp from "@/pages/PowerfulWorkingApp";
 import WorkingApp from "@/pages/WorkingApp";
@@ -13,8 +14,11 @@ function App() {
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Routes>
+          {/* Navigation Hub - بوابة التنقل */}
+          <Route path="/" element={<NavigationPage />} />
+
           {/* محرك الذكاء الاصطناعي المتقدم مع 10 قدرات */}
-          <Route path="/" element={<OrganizerPage />} />
+          <Route path="/organizer" element={<OrganizerPage />} />
 
           {/* RemoveDuplicate PRO - صياد التكرارات الذكي */}
           <Route
