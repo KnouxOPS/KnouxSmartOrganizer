@@ -149,7 +149,7 @@ export const SECTION_THEMES: Record<string, SectionTheme> = {
     nameAr: "حارس الخصوصية",
     path: "/privacy-guard",
     description: "Advanced privacy protection and data security tools",
-    descriptionAr: "أدوات متقدمة لحماية الخصوصية وأمان البيانات",
+    descriptionAr: "أدوات متقدمة لحماية الخصوصية وأما�� البيانات",
     icon: "Lock",
     colors: {
       primary: "#dc2626", // Crimson Red
@@ -576,7 +576,7 @@ export const folderMasterSection: SectionTheme = {
     {
       id: "empty-duplicate-remover",
       name: "Empty & Duplicate Folder Remover",
-      nameAr: "مزيل المجلدات الفارغة والمتكررة",
+      nameAr: "مزيل المجلد��ت الفارغة والمتكررة",
       description: "Safe removal of empty and duplicate directories",
       descriptionAr: "إزالة آمنة للمجلدات الفارغة والمتكررة",
       icon: "FolderX",
@@ -614,7 +614,11 @@ export const folderMasterSection: SectionTheme = {
       descriptionAr: "دمج ذكي للمجلدات المتشابهة",
       icon: "Merge",
       color: "cyan",
-      features: ["Similarity Detection", "Smart Merging", "Conflict Resolution"],
+      features: [
+        "Similarity Detection",
+        "Smart Merging",
+        "Conflict Resolution",
+      ],
       riskLevel: "moderate",
     },
     {
@@ -629,7 +633,6 @@ export const folderMasterSection: SectionTheme = {
       riskLevel: "safe",
     },
   ],
-};
 };
 
 export type SectionId = keyof typeof SECTION_THEMES;
