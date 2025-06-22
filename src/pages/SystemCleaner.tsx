@@ -48,7 +48,7 @@ import {
   Clipboard,
   Network,
   FileCheck,
-  UserShield,
+  ShieldCheck,
   CircuitBoard,
   Router,
   Stethoscope,
@@ -302,7 +302,7 @@ const systemTools: SystemTool[] = [
     description:
       "Review and advise on system security settings and UAC configuration",
     category: "security",
-    icon: UserShield,
+    icon: ShieldCheck,
     enabled: true,
     status: "idle",
     issuesFound: 2,
