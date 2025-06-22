@@ -10,6 +10,7 @@ import RemoveDuplicatePro from "@/pages/RemoveDuplicatePro";
 import SystemCleaner from "@/pages/SystemCleaner";
 import PrivacyGuard from "@/pages/PrivacyGuard";
 import SmartAdvisor from "@/pages/SmartAdvisor";
+import FolderMaster from "@/pages/FolderMaster";
 import NotFound from "@/pages/NotFound";
 import "./App.css";
 
