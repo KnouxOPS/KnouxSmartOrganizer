@@ -1,6 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
+import VisionDashboardPage from "@/pages/VisionDashboard";
 import NavigationPage from "@/pages/NavigationPage";
 import OrganizerPage from "@/pages/OrganizerPage";
 import PowerfulWorkingApp from "@/pages/PowerfulWorkingApp";
@@ -14,8 +15,11 @@ function App() {
     <Router>
       <div className="min-h-screen bg-gray-50">
         <Routes>
-          {/* Navigation Hub - بوابة التنقل */}
-          <Route path="/" element={<NavigationPage />} />
+          {/* Vision UI Dashboard - لوحة التحكم الذكية */}
+          <Route path="/" element={<VisionDashboardPage />} />
+
+          {/* Navigation Hub - بوابة التنقل البديلة */}
+          <Route path="/nav" element={<NavigationPage />} />
 
           {/* محرك الذكاء الاصطناعي المتقدم مع 10 قدرات */}
           <Route path="/organizer" element={<OrganizerPage />} />
