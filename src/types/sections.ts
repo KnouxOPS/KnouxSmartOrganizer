@@ -500,8 +500,136 @@ export const SECTION_THEMES: Record<string, SectionTheme> = {
       realTime: true,
       cloudSync: false,
     },
-    status: "active",
+  ],
+};
+
+// Folder Master Section (4th Section)
+export const folderMasterSection: SectionTheme = {
+  id: "folder-master",
+  name: "Folder Master",
+  nameAr: "سيد المجلدات",
+  path: "/folder-master",
+  description: "Digital Organization Maestro",
+  descriptionAr: "مايسترو التنظيم الرقمي",
+  icon: "Crown",
+
+  colors: {
+    primary: "#F59E0B", // Royal Gold
+    secondary: "#0EA5E9", // Sky Blue
+    accent: "#FBBF24", // Golden Accent
+    background: "from-yellow-900 via-blue-900 to-indigo-950",
+    surface: "bg-yellow-500/10 border-yellow-500/20",
+    text: {
+      primary: "#FFFFFF",
+      secondary: "#FDE047", // Yellow-300
+      accent: "#0EA5E9", // Sky Blue
+    },
+    border: {
+      primary: "#F59E0B/30", // Gold/30
+      secondary: "#0EA5E9/30", // Sky Blue/30
+    },
+    gradient: {
+      primary: "from-yellow-500 to-yellow-600",
+      secondary: "from-blue-500 to-blue-600",
+      mesh: "bg-[radial-gradient(circle_at_25%_75%,rgba(251,191,36,0.1)_0%,transparent_50%)]",
+    },
   },
+
+  style: {
+    borderRadius: "rounded",
+    glassmorphism: true,
+    shadows: "dramatic",
+    animations: "dynamic",
+  },
+
+  features: {
+    toolCount: 7,
+    aiPowered: true,
+    realTime: true,
+    cloudSync: false,
+  },
+
+  // Folder Master specific tools with AI capabilities
+  tools: [
+    {
+      id: "auto-restructure",
+      name: "Automatic Folder Restructuring",
+      nameAr: "إعادة الهيكلة التلقائية للمجلدات",
+      description: "AI-powered intelligent folder reorganization",
+      descriptionAr: "إعادة تنظيم المجلدات الذكية بالذكاء الاصطناعي",
+      icon: "TreePine",
+      color: "yellow",
+      features: ["AI Analysis", "Smart Structure", "Batch Processing"],
+      riskLevel: "moderate",
+    },
+    {
+      id: "content-classifier",
+      name: "Content-Based File Classifier",
+      nameAr: "مصنف الملفات بناءً على المحتوى",
+      description: "Intelligent content analysis and categorization",
+      descriptionAr: "تحليل وتصنيف المحتوى الذكي",
+      icon: "Filter",
+      color: "blue",
+      features: ["Content Analysis", "Smart Categories", "Multi-language"],
+      riskLevel: "safe",
+    },
+    {
+      id: "empty-duplicate-remover",
+      name: "Empty & Duplicate Folder Remover",
+      nameAr: "مزيل المجلدات الفارغة والمتكررة",
+      description: "Safe removal of empty and duplicate directories",
+      descriptionAr: "إزالة آمنة للمجلدات الفارغة والمتكررة",
+      icon: "FolderX",
+      color: "red",
+      features: ["Deep Scan", "Safe Removal", "Backup Creation"],
+      riskLevel: "safe",
+    },
+    {
+      id: "smart-naming",
+      name: "Smart Folder Naming Suggestions",
+      nameAr: "اقتراحات أسماء مجلدات ذكية",
+      description: "AI-generated descriptive folder names",
+      descriptionAr: "أسماء مجلدات وصفية مولدة بالذكاء الاصطناعي",
+      icon: "Tag",
+      color: "purple",
+      features: ["AI Naming", "Pattern Recognition", "Custom Templates"],
+      riskLevel: "safe",
+    },
+    {
+      id: "downloads-organizer",
+      name: "Scattered Downloads Organizer",
+      nameAr: "منظم مجلدات التنزيلات المبعثرة",
+      description: "Automatic Downloads folder organization",
+      descriptionAr: "تنظيم مجلد التنزيلات تلقائياً",
+      icon: "Download",
+      color: "green",
+      features: ["Type Sorting", "Date Organization", "Bulk Processing"],
+      riskLevel: "safe",
+    },
+    {
+      id: "similar-merger",
+      name: "Similar Folder Merger",
+      nameAr: "أداة دمج المجلدات المتشابهة",
+      description: "Intelligent merging of similar directories",
+      descriptionAr: "دمج ذكي للمجلدات المتشابهة",
+      icon: "Merge",
+      color: "cyan",
+      features: ["Similarity Detection", "Smart Merging", "Conflict Resolution"],
+      riskLevel: "moderate",
+    },
+    {
+      id: "size-date-analyzer",
+      name: "Folder Analysis by Size & Date",
+      nameAr: "تحليل المجلدات حسب الحجم والتاريخ",
+      description: "Comprehensive folder analysis and visualization",
+      descriptionAr: "تحليل ومرئيات شاملة للمجلدات",
+      icon: "BarChart3",
+      color: "indigo",
+      features: ["Size Visualization", "Age Analysis", "Archive Suggestions"],
+      riskLevel: "safe",
+    },
+  ],
+};
 };
 
 export type SectionId = keyof typeof SECTION_THEMES;
