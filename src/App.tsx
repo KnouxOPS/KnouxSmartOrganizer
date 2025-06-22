@@ -7,6 +7,9 @@ import OrganizerPage from "@/pages/OrganizerPage";
 import PowerfulWorkingApp from "@/pages/PowerfulWorkingApp";
 import WorkingApp from "@/pages/WorkingApp";
 import RemoveDuplicatePro from "@/pages/RemoveDuplicatePro";
+import SystemCleaner from "@/pages/SystemCleaner";
+import PrivacyGuard from "@/pages/PrivacyGuard";
+import SmartAdvisor from "@/pages/SmartAdvisor";
 import NotFound from "@/pages/NotFound";
 import "./App.css";
 
@@ -29,6 +32,15 @@ function App() {
             path="/remove-duplicate-pro"
             element={<RemoveDuplicatePro />}
           />
+
+          {/* System Cleaner - منظف النظام */}
+          <Route path="/system-cleaner" element={<SystemCleaner />} />
+
+          {/* Privacy Guard - حارس الخصوصية */}
+          <Route path="/privacy-guard" element={<PrivacyGuard />} />
+
+          {/* Smart Advisor - المستشار الذكي */}
+          <Route path="/smart-advisor" element={<SmartAdvisor />} />
 
           {/* التطبيق القوي السابق */}
           <Route path="/powerful" element={<PowerfulWorkingApp />} />
