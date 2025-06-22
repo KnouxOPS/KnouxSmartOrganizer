@@ -43,6 +43,9 @@ function App() {
           {/* Smart Advisor - المستشار الذكي */}
           <Route path="/smart-advisor" element={<SmartAdvisor />} />
 
+          {/* Folder Master - سيد المجلدات */}
+          <Route path="/folder-master" element={<FolderMaster />} />
+
           {/* التطبيق القوي السابق */}
           <Route path="/powerful" element={<PowerfulWorkingApp />} />
 
