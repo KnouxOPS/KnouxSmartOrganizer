@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import OrganizerPage from "@/pages/OrganizerPage";
 import PowerfulWorkingApp from "@/pages/PowerfulWorkingApp";
 import WorkingApp from "@/pages/WorkingApp";
+import RemoveDuplicatePro from "@/pages/RemoveDuplicatePro";
 import NotFound from "@/pages/NotFound";
 import "./App.css";
 
@@ -14,6 +15,12 @@ function App() {
         <Routes>
           {/* محرك الذكاء الاصطناعي المتقدم مع 10 قدرات */}
           <Route path="/" element={<OrganizerPage />} />
+
+          {/* RemoveDuplicate PRO - صياد التكرارات الذكي */}
+          <Route
+            path="/remove-duplicate-pro"
+            element={<RemoveDuplicatePro />}
+          />
 
           {/* التطبيق القوي السابق */}
           <Route path="/powerful" element={<PowerfulWorkingApp />} />
