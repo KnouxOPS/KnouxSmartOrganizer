@@ -27,6 +27,7 @@ const OfflineAIManager = require("./offline-ai-manager");
 
 // --- Application State ---
 let isProcessing = false;
+let aiManager = null;
 
 // --- Application Directories ---
 const APP_DIRS = {
