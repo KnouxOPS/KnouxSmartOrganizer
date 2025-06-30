@@ -118,12 +118,24 @@ export const AppController: React.FC = () => {
       <Router>
         <div className="min-h-screen">
           <Routes>
-            {/* Glass Homepage */}
+            {/* Knoux Main Dashboard */}
             <Route
               path="/"
               element={
                 <ErrorBoundary>
-                  <GlassHomePage />
+                  <KnouxMainDashboard />
+                </ErrorBoundary>
+              }
+            />
+
+            {/* Section Detail Pages */}
+            <Route
+              path="/section/:sectionId"
+              element={
+                <ErrorBoundary>
+                  <SectionDetailPage
+                    sectionId={window.location.pathname.split("/")[2]}
+                  />
                 </ErrorBoundary>
               }
             />
