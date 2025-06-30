@@ -433,7 +433,6 @@ export {
   NeoIconButton,
   NeoContainer,
   NeoSection,
-  NeoGrid,
 };
 
 // Default export for convenience
