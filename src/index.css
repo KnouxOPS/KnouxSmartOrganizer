@@ -3,6 +3,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Neomorphism Design System */
+@import "./styles/neomorphism.css";
+@import "./styles/animations.css";
+
 @layer base {
   :root {
     --background: 0 0% 100%;
