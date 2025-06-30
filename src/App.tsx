@@ -13,6 +13,7 @@ import LivePreviewDemo from "./pages/LivePreviewDemo";
 import ExampleUsage from "./pages/ExampleUsage";
 import AIAnalysisPage from "./pages/AIAnalysisPage";
 import OfflineAIToolsPage from "./pages/OfflineAIToolsPage";
+import NeomorphismDashboard from "./pages/NeomorphismDashboard";
 import NotFound from "@/pages/NotFound";
 import { pwaManager } from "@/lib/pwa-config";
 import "./App.css";
