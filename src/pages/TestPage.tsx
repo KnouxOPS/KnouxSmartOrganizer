@@ -42,7 +42,7 @@ const apps: AppCard[] = [
     id: "organizer",
     title: "المنظم الذكي",
     subtitle: "Smart Organizer",
-    description: "تنظيم متقدم بالذكاء الاصطناعي وتصنيف تلقائي ذكي للملفات",
+    description: "ت��ظيم متقدم بالذكاء الاصطناعي وتصنيف تلقائي ذكي للملفات",
     LogoComponent: SmartOrganizerLogo,
     route: "/organizer",
     gradient: "from-blue-400 via-indigo-500 to-purple-600",
@@ -455,6 +455,12 @@ export function TestPage() {
                 className="w-full bg-gradient-to-r from-pink-600 via-rose-600 to-red-600 text-white px-6 py-3 rounded-lg hover:from-pink-700 hover:via-rose-700 hover:to-red-700 transition-colors shadow-lg border-2 border-purple-400/30"
               >
                 🧠 تحليل الصور بالذكاء الاصطناعي - مطابق للصور المرفقة
+              </button>
+              <button
+                onClick={() => (window.location.href = "/offline-ai-tools")}
+                className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-indigo-700 hover:via-purple-700 hover:to-blue-700 transition-colors shadow-lg border-2 border-green-400/30"
+              >
+                🤖 أدوات الذكاء الاصطناعي المحلية - يعمل بدون إنترنت
               </button>
             </div>
           </div>
