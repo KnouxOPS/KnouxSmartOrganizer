@@ -248,6 +248,14 @@ function App() {
                   </ErrorBoundary>
                 }
               />
+              <Route
+                path="/neomorphism-dashboard"
+                element={
+                  <ErrorBoundary>
+                    <NeomorphismDashboard />
+                  </ErrorBoundary>
+                }
+              />
 
               {/* صفحات إضافية للتطبيق المحمول */}
               <Route
