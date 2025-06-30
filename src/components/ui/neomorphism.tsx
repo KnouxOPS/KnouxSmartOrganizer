@@ -435,7 +435,6 @@ export {
   NeoSection,
   NeoGrid,
   NeoFeatureCard,
-  NeoStatsCard,
 };
 
 // Default export for convenience
