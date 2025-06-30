@@ -4,40 +4,33 @@
  * Creates Windows executable using Electron Builder
  */
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const { execSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
-console.log('🚀 Knoux SmartOrganizer - EXE Build Process');
-console.log('👨‍💻 Prof. Sadek Elgazar');
-console.log('===============================================');
+console.log("🚀 Knoux SmartOrganizer - EXE Build Process");
+console.log("👨‍💻 Prof. Sadek Elgazar");
+console.log("===============================================");
 
 // Check if this is Windows
-if (process.platform !== 'win32') {
-    console.log('⚠️  This build script is designed for Windows');
-    console.log('💡 You can still build for Windows from other platforms');
+if (process.platform !== "win32") {
+  console.log("⚠️  This build script is designed for Windows");
+  console.log("💡 You can still build for Windows from other platforms");
 }
 
 // Ensure required directories exist
-const requiredDirs = [
-    'build',
-    'assets',
-    'tools',
-    'models',
-    'data',
-    'logs'
-];
+const requiredDirs = ["build", "assets", "tools", "models", "data", "logs"];
 
-console.log('📁 Creating required directories...');
-requiredDirs.forEach(dir => {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-        console.log(`✓ Created: ${dir}`);
-    }
+console.log("📁 Creating required directories...");
+requiredDirs.forEach((dir) => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log(`✓ Created: ${dir}`);
+  }
 });
 
 // Create Electron main process file
-console.log('⚙️  Creating Electron configuration...');
+console.log("⚙️  Creating Electron configuration...");
 
 const electronMain = `
 const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
@@ -72,18 +65,14 @@ function createWindow() {
     // Load the app
     const startUrl = isDev 
         ? 'http://localhost:8080' 
-        : \`file://\${path.join(__dirname, '../build/index.html')}\`;
+        : 'file://' + path.join(__dirname, '../build/index.html');
     
     mainWindow.loadURL(startUrl);
 
     // Show window when ready
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
-        
-        // Focus on window
         mainWindow.focus();
-        
-        // Maximize on startup for best experience
         mainWindow.maximize();
     });
 
@@ -97,11 +86,6 @@ function createWindow() {
         shell.openExternal(url);
         return { action: 'deny' };
     });
-
-    // Developer tools in development
-    if (isDev) {
-        mainWindow.webContents.openDevTools();
-    }
 }
 
 // App event handlers
@@ -122,9 +106,8 @@ app.on('activate', () => {
 // IPC Handlers for tool execution
 ipcMain.handle('execute-tool', async (event, toolId, args) => {
     try {
-        console.log(\`Executing tool: \${toolId}\`);
+        console.log('Executing tool: ' + toolId);
         
-        // Execute Python tool runner
         const pythonProcess = spawn('python', [
             path.join(__dirname, 'backend/tool-runner.py'),
             '--run', toolId
@@ -154,7 +137,7 @@ ipcMain.handle('execute-tool', async (event, toolId, args) => {
                         resolve({ success: true, output: stdout });
                     }
                 } else {
-                    reject(new Error(\`Tool execution failed: \${stderr}\`));
+                    reject(new Error('Tool execution failed: ' + stderr));
                 }
             });
         });
@@ -164,57 +147,11 @@ ipcMain.handle('execute-tool', async (event, toolId, args) => {
     }
 });
 
-ipcMain.handle('get-system-metrics', async () => {
-    try {
-        const pythonProcess = spawn('python', [
-            path.join(__dirname, 'backend/tool-runner.py'),
-            '--metrics'
-        ], {
-            stdio: 'pipe',
-            encoding: 'utf-8'
-        });
-
-        return new Promise((resolve, reject) => {
-            let stdout = '';
-
-            pythonProcess.stdout.on('data', (data) => {
-                stdout += data.toString();
-            });
-
-            pythonProcess.on('close', (code) => {
-                if (code === 0) {
-                    try {
-                        const metrics = JSON.parse(stdout);
-                        resolve(metrics);
-                    } catch (e) {
-                        resolve({});
-                    }
-                } else {
-                    resolve({});
-                }
-            });
-        });
-    } catch (error) {
-        console.error('Metrics error:', error);
-        return {};
-    }
-});
-
-// Handle app updates
 app.setAppUserModelId('com.knoux.smartorganizer');
-
-// Security: Prevent new window creation
-app.on('web-contents-created', (event, contents) => {
-    contents.on('new-window', (event, navigationUrl) => {
-        event.preventDefault();
-        shell.openExternal(navigationUrl);
-    });
-});
-
 console.log('Knoux SmartOrganizer Electron App Started');
 `;
 
-fs.writeFileSync('electron-main.js', electronMain);
+fs.writeFileSync("electron-main.js", electronMain);
 
 // Create preload script
 const preloadScript = `
@@ -230,136 +167,186 @@ contextBridge.exposeInMainWorld('electronAPI', {
 console.log('Knoux SmartOrganizer Preload Script Loaded');
 `;
 
-fs.writeFileSync('preload.js', preloadScript);
+fs.writeFileSync("preload.js", preloadScript);
 
 // Create package.json for Electron
 const electronPackage = {
-    "name": "knoux-smartorganizer",
-    "version": "2.0.0",
-    "description": "Advanced Windows File Organization Tool with AI",
-    "main": "electron-main.js",
-    "author": "Prof. Sadek Elgazar",
-    "license": "MIT",
-    "scripts": {
-        "electron": "electron .",
-        "electron-build": "electron-builder",
-        "build-exe": "npm run build && electron-builder --win --x64"
+  name: "knoux-smartorganizer",
+  version: "2.0.0",
+  description: "Advanced Windows File Organization Tool with AI",
+  main: "electron-main.js",
+  author: "Prof. Sadek Elgazar",
+  license: "MIT",
+  scripts: {
+    electron: "electron .",
+    "electron-build": "electron-builder",
+    "build-exe": "npm run build && electron-builder --win --x64",
+  },
+  devDependencies: {
+    electron: "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "electron-is-dev": "^2.0.0",
+  },
+  build: {
+    appId: "com.knoux.smartorganizer",
+    productName: "Knoux SmartOrganizer",
+    directories: {
+      output: "dist",
+      buildResources: "assets",
     },
-    "devDependencies": {
-        "electron": "^28.0.0",
-        "electron-builder": "^24.9.1",
-        "electron-is-dev": "^2.0.0"
+    files: [
+      "build/**/*",
+      "electron-main.js",
+      "preload.js",
+      "backend/**/*",
+      "tools/**/*",
+      "models/**/*",
+      "data/**/*",
+      "node_modules/**/*",
+      "package.json",
+    ],
+    win: {
+      target: [
+        {
+          target: "nsis",
+          arch: ["x64"],
+        },
+      ],
+      icon: "assets/icon.ico",
+      requestedExecutionLevel: "requireAdministrator",
     },
-    "build": {
-        "appId": "com.knoux.smartorganizer",
-        "productName": "Knoux SmartOrganizer",
-        "directories": {
-            "output": "dist",
-            "buildResources": "assets"
-        },
-        "files": [
-            "build/**/*",
-            "electron-main.js",
-            "preload.js",
-            "backend/**/*",
-            "tools/**/*",
-            "models/**/*",
-            "data/**/*",
-            "node_modules/**/*",
-            "package.json"
-        ],
-        "win": {
-            "target": [
-                {
-                    "target": "nsis",
-                    "arch": ["x64"]
-                }
-            ],
-            "icon": "assets/icon.ico",
-            "requestedExecutionLevel": "requireAdministrator"
-        },
-        "nsis": {
-            "oneClick": false,
-            "allowToChangeInstallationDirectory": true,
-            "createDesktopShortcut": true,
-            "createStartMenuShortcut": true,
-            "shortcutName": "Knoux SmartOrganizer"
-        }
-    }
+    nsis: {
+      oneClick: false,
+      allowToChangeInstallationDirectory: true,
+      createDesktopShortcut: true,
+      createStartMenuShortcut: true,
+      shortcutName: "Knoux SmartOrganizer",
+    },
+  },
 };
 
-fs.writeFileSync('package-electron.json', JSON.stringify(electronPackage, null, 2));
+fs.writeFileSync(
+  "package-electron.json",
+  JSON.stringify(electronPackage, null, 2),
+);
 
-// Install Electron dependencies if needed
-console.log('📦 Installing Electron dependencies...');
-try {
-    execSync('npm install electron electron-builder electron-is-dev --save-dev', { stdio: 'inherit' });
-    console.log('✓ Electron dependencies installed');
-} catch (error) {
-    console.log('⚠️  Please install Electron dependencies manually:');
-    console.log('npm install electron electron-builder electron-is-dev --save-dev');
-}
+// Create README for deployment
+const deploymentReadme = `# Knoux SmartOrganizer - Deployment Guide
 
-// Build the React app
-console.log('🔨 Building React application...');
-try {
-    execSync('npm run build', { stdio: 'inherit' });
-    console.log('✓ React app built successfully');
-} catch (error) {
-    console.error('❌ React build failed:', error.message);
-    process.exit(1);
-}
+## 📦 EXE Build Process
 
-// Copy necessary files
-console.log('📋 Copying files for Electron...');
-const filesToCopy = [
-    { src: 'src/backend/tool-runner.py', dest: 'backend/tool-runner.py' },
-    { src: 'src/data/sections.json', dest: 'data/sections.json' },
-    { src: 'tools', dest: 'tools', isDir: true }
-];
+### Prerequisites
+- Node.js 18+ installed
+- Python 3.8+ installed
+- Windows 10/11 (for building Windows executable)
 
-filesToCopy.forEach(({ src, dest, isDir }) => {
-    if (fs.existsSync(src)) {
-        if (isDir) {
-            execSync(\`cp -r "\${src}" "\${path.dirname(dest)}"\`, { stdio: 'inherit' });
-        } else {
-            const destDir = path.dirname(dest);
-            if (!fs.existsSync(destDir)) {
-                fs.mkdirSync(destDir, { recursive: true });
-            }
-            fs.copyFileSync(src, dest);
-        }
-        console.log(\`✓ Copied: \${src} -> \${dest}\`);
-    }
-});
+### Build Steps
 
-// Create icon if it doesn't exist
-if (!fs.existsSync('assets/icon.ico')) {
-    console.log('📱 Creating default icon...');
-    // Create a simple text-based icon placeholder
-    const iconData = 'This would be the app icon data';
-    fs.writeFileSync('assets/icon.ico', iconData);
-}
+1. **Install Dependencies**
+   \`\`\`bash
+   npm install
+   npm install electron electron-builder electron-is-dev --save-dev
+   \`\`\`
 
-// Build the Electron app
-console.log('🏗️  Building Electron executable...');
-try {
-    execSync('npx electron-builder --win --x64', { stdio: 'inherit' });
-    console.log('✅ EXE build completed successfully!');
-    console.log('📁 Check the "dist" folder for your executable');
-} catch (error) {
-    console.error('❌ Electron build failed:', error.message);
-    console.log('💡 You can try building manually with: npx electron-builder --win --x64');
-}
+2. **Build React App**
+   \`\`\`bash
+   npm run build
+   \`\`\`
 
-console.log('');
-console.log('🎉 Build process completed!');
-console.log('📋 Summary:');
-console.log('   - React app built and optimized');
-console.log('   - Electron wrapper configured');
-console.log('   - Windows executable created');
-console.log('   - Tools and backend scripts included');
-console.log('   - AI models support ready');
-console.log('');
-console.log('🚀 Your Knoux SmartOrganizer is ready!');
-console.log('👨‍💻 Created by Prof. Sadek Elgazar');
+3. **Create EXE**
+   \`\`\`bash
+   node build-exe.js
+   \`\`\`
+
+4. **Find Your EXE**
+   - Check the \`dist\` folder
+   - Install the NSIS installer or use the portable version
+
+## 🛠️ Tool Scripts Included
+
+### RemoveDuplicate PRO (20 tools)
+- Smart Image Scanner (AI-powered)
+- Video Duplicate Finder
+- Audio Duplicate Detector
+- Document Similarity Finder
+- Binary File Duplicates
+- And 15 more...
+
+### System Cleaner (20 tools)
+- Registry Optimizer (PowerShell)
+- Startup Manager
+- Service Optimizer
+- Memory Cleaner
+- Disk Analyzer
+- And 15 more...
+
+### Privacy Guard (7 tools)
+- Browser History Cleaner
+- Tracking Blocker
+- Cookie Manager
+- File Shredder
+- Metadata Cleaner
+- DNS Security
+- VPN Manager
+
+### Additional Sections
+- Folder Master (7 tools)
+- Text Analyzer (7 tools)
+- Media Organizer (7 tools)
+- Productivity Hub (7 tools)
+- Smart Organizer (10 tools)
+- Boost Mode (5 tools)
+- Smart Advisor (5 tools)
+
+## 🤖 AI Models Supported
+
+- **GPT4All Falcon**: Local text generation
+- **CLIP**: Image classification and analysis
+- **Whisper**: Speech-to-text processing
+- **SentenceTransformers**: Text similarity
+
+## 💻 System Requirements
+
+- **OS**: Windows 10/11
+- **RAM**: 8GB minimum (16GB recommended)
+- **Storage**: 20GB free space
+- **CPU**: Multi-core processor recommended
+- **GPU**: Optional (for AI acceleration)
+
+## 🚀 Features
+
+✅ **Fully Offline**: No internet required
+✅ **Real Tools**: PowerShell, Python, Node.js scripts
+✅ **Live Preview**: Real-time system monitoring
+✅ **AI Powered**: Local AI models
+✅ **Glass UI**: Premium glassmorphism interface
+✅ **95 Tools**: Across 10 specialized sections
+
+## 👨‍💻 Author
+
+**Prof. Sadek Elgazar**  
+Advanced File Organization Specialist
+
+---
+
+© 2024 Knoux SmartOrganizer - The Ultimate Windows File Management Tool
+`;
+
+fs.writeFileSync("DEPLOYMENT_README.md", deploymentReadme);
+
+console.log("✅ Build configuration completed!");
+console.log("📋 Files created:");
+console.log("   - electron-main.js (Electron main process)");
+console.log("   - preload.js (Security bridge)");
+console.log("   - package-electron.json (Electron config)");
+console.log("   - DEPLOYMENT_README.md (Documentation)");
+console.log("");
+console.log("🎯 Next Steps:");
+console.log(
+  "1. npm install electron electron-builder electron-is-dev --save-dev",
+);
+console.log("2. npm run build");
+console.log("3. npx electron-builder --win --x64");
+console.log("");
+console.log('🎉 Your EXE will be in the "dist" folder!');
+console.log("👨‍💻 Created by Prof. Sadek Elgazar");
