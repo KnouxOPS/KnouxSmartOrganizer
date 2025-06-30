@@ -22,6 +22,9 @@ const {
   areModelsReady,
 } = require("./core/models.js");
 
+// --- Import Offline AI Manager ---
+const OfflineAIManager = require("./offline-ai-manager");
+
 // --- Application State ---
 let isProcessing = false;
 
