@@ -239,6 +239,14 @@ function App() {
               <Route path="/live-preview-demo" element={<LivePreviewDemo />} />
               <Route path="/example-usage" element={<ExampleUsage />} />
               <Route path="/ai-analysis" element={<AIAnalysisPage />} />
+              <Route
+                path="/offline-ai-tools"
+                element={
+                  <ErrorBoundary>
+                    <OfflineAIToolsPage />
+                  </ErrorBoundary>
+                }
+              />
 
               {/* صفحات إضافية للتطبيق المحمول */}
               <Route
