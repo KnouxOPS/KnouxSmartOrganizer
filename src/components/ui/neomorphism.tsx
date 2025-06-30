@@ -423,17 +423,7 @@ export const NeoSpinner: React.FC<{
   );
 };
 
-// Export all components
-export {
-  NeoCard,
-  NeoButton,
-  NeoInput,
-  NeoProgress,
-  NeoToggle,
-  NeoIconButton,
-  NeoContainer,
-  NeoSection,
-};
+// Components are already exported individually above
 
 // Default export for convenience
 export default {
