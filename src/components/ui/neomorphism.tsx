@@ -436,7 +436,6 @@ export {
   NeoGrid,
   NeoFeatureCard,
   NeoStatsCard,
-  NeoSpinner,
 };
 
 // Default export for convenience
