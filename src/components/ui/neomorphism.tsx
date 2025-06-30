@@ -434,7 +434,6 @@ export {
   NeoContainer,
   NeoSection,
   NeoGrid,
-  NeoFeatureCard,
 };
 
 // Default export for convenience
