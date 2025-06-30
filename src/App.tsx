@@ -1,21 +1,5 @@
-import React, { useEffect, Component, ErrorInfo, ReactNode } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Toaster } from "sonner";
-import TestPage from "@/pages/TestPage";
-import SimplePage from "@/pages/SimplePage";
-import UltimatePage from "@/pages/UltimatePage";
-import OrganizerPage from "@/pages/OrganizerPage";
-import PowerfulWorkingApp from "@/pages/PowerfulWorkingApp";
-import WorkingApp from "@/pages/WorkingApp";
-import RemoveDuplicatePage from "@/pages/RemoveDuplicatePage";
-import RemoveDuplicatePageEnhanced from "./pages/RemoveDuplicatePageEnhanced";
-import LivePreviewDemo from "./pages/LivePreviewDemo";
-import ExampleUsage from "./pages/ExampleUsage";
-import AIAnalysisPage from "./pages/AIAnalysisPage";
-import OfflineAIToolsPage from "./pages/OfflineAIToolsPage";
-import NeomorphismDashboard from "./pages/NeomorphismDashboard";
-import NotFound from "@/pages/NotFound";
-import { pwaManager } from "@/lib/pwa-config";
+import React from "react";
+import { AppController } from "@/components/AppController";
 import "./App.css";
 
 // Error Boundary Component
