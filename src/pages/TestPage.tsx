@@ -456,6 +456,20 @@ export function TestPage() {
               >
                 🧠 تحليل الصور بالذكاء الاصطناعي - مطابق للصور المرفقة
               </button>
+              <button
+                onClick={() => (window.location.href = "/offline-ai-tools")}
+                className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg hover:from-indigo-700 hover:via-purple-700 hover:to-blue-700 transition-colors shadow-lg border-2 border-green-400/30"
+              >
+                🤖 أدوات الذكاء الاصطناعي المحلية - يعمل بدون إنترنت
+              </button>
+              <button
+                onClick={() =>
+                  (window.location.href = "/neomorphism-dashboard")
+                }
+                className="w-full bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 text-white px-6 py-3 rounded-lg hover:from-emerald-700 hover:via-teal-700 hover:to-cyan-700 transition-colors shadow-lg border-2 border-amber-400/30"
+              >
+                🎨 لوحة التحكم Neomorphism - تصميم ناعم متطور
+              </button>
             </div>
           </div>
         </motion.div>
